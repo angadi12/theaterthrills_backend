@@ -13,6 +13,7 @@ const {TheaterRouter}=require("./Route/Theater")
 const {OTProuter}=require("./Route/OTP")
 const {BookingRouter}=require("./Route/Booking")
 const {ContactRouter}=require("./Route/Contact")
+const {UnsavedBookingRouter}=require("./Route/Unsaved")
 
 const { createServer } = require("http");
 const { Server }= require("socket.io");
@@ -44,6 +45,7 @@ app.use("/api/v1/Theater", TheaterRouter );
 app.use("/api/v1/Auth", OTProuter );
 app.use("/api/v1/Booking", BookingRouter );
 app.use("/api/v1/Contact", ContactRouter );
+app.use("/api/v1/Unsaved", UnsavedBookingRouter );
 
 
 
