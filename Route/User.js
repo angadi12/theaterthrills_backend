@@ -23,10 +23,10 @@ UserRouter.post(
       .withMessage("Auth type must be either 'firebase' or 'emailOtp'"),
 
     // UID validation only for Firebase
-    body("uid")
-      .if(body("authType").equals("firebase"))
-      .notEmpty()
-      .withMessage("UID is required for Firebase authentication"),
+    // body("uid")
+    //   .if(body("authType").equals("firebase"))
+    //   .notEmpty()
+    //   .withMessage("UID is required for Firebase authentication"),
 
     // Email validation only for Email OTP
     body("email")

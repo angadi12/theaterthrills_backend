@@ -9,6 +9,8 @@ const userSchema = new Schema({
   role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
   authType: { type: String, enum: ['firebase', 'emailOtp'], required: true }, 
   createdAt: { type: Date, default: Date.now },
+  branch: { type: Schema.Types.ObjectId, ref: "Branch" }, 
+  activate: { type: Boolean, default: true },
   bookings: [{ type: Schema.Types.ObjectId, ref: 'Booking' }] 
 });
 

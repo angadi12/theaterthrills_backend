@@ -4,6 +4,80 @@ const User = require("../Model/User");
 const admin = require("../Services/firebaseAdmin");
 const jwt = require("jsonwebtoken"); 
 // Create a new user
+// const createUser = async (req, res, next) => {
+//   console.log(req.body);
+//   try {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Validation errors",
+//         errors: errors.array(), 
+//       });
+//     }
+
+//     const { uid, email, phoneNumber, fullName, role, authType } = req.body;
+
+//     // Validate fields based on authType
+//     if (authType === "firebase" && !phoneNumber) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "phoneNumber is required for Firebase authentication",
+//       });
+//     }
+
+//     if (authType === "emailOtp" && !email) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Email is required for Email OTP authentication",
+//       });
+//     }
+
+//     let existingUser;
+//     if (authType === "firebase") {
+//       existingUser = await User.findOne({ uid });
+//     } else if (authType === "emailOtp") {
+//       existingUser = await User.findOne({ email });
+//     }
+
+//     if (existingUser) {
+//       return res.status(200).json({
+//         status: "success",
+//         message: "User already exists",
+//         data: {
+//           user: existingUser,
+//         },
+//       });
+//     }
+
+//     let assignedRole = role;
+//     if (phoneNumber === process.env.ADMIN_PHONE) {
+//       assignedRole = "superadmin";
+//     } else if (email === process.env.ADMIN_EMAIL) {
+//       assignedRole = "superadmin";
+//     }
+
+//     // Create a new user based on the provided data
+//     const newUser = await User.create({
+//       uid: authType === "firebase" ? uid : null,
+//       email,
+//       phoneNumber,
+//       fullName,
+//       role: assignedRole,
+//       authType,
+//     });
+
+//     res.status(201).json({
+//       status: "success",
+//       data: {
+//         user: newUser,
+//       },
+//     });
+//   } catch (err) {
+//     next(new AppErr("Failed to create user", 500, err.message));
+//   }
+// };
+
 const createUser = async (req, res, next) => {
   console.log(req.body);
   try {
@@ -12,17 +86,17 @@ const createUser = async (req, res, next) => {
       return res.status(400).json({
         status: false,
         message: "Validation errors",
-        errors: errors.array(), 
+        errors: errors.array(),
       });
     }
 
-    const { uid, email, phoneNumber, fullName, role, authType } = req.body;
+    const { uid, email, phoneNumber, fullName, role, authType, branch } = req.body;
 
     // Validate fields based on authType
-    if (authType === "firebase" && !uid) {
+    if (authType === "firebase" && !phoneNumber) {
       return res.status(400).json({
         status: false,
-        message: "UID is required for Firebase authentication",
+        message: "Phone number is required for Firebase authentication",
       });
     }
 
@@ -33,50 +107,99 @@ const createUser = async (req, res, next) => {
       });
     }
 
+    // Ensure branch is provided for admin role
+    if (role === "admin" && !branch) {
+      return res.status(400).json({
+        status: false,
+        message: "Branch is required for admin creation",
+      });
+    }
+
+    // Check for existing user
     let existingUser;
     if (authType === "firebase") {
-      existingUser = await User.findOne({ uid });
+      existingUser = await User.findOne({ phoneNumber });
     } else if (authType === "emailOtp") {
       existingUser = await User.findOne({ email });
     }
 
+    // Handle existing user
     if (existingUser) {
+      if (existingUser.role === "admin" && !existingUser.uid && uid) {
+        // Update UID for admin logging in for the first time
+        existingUser.uid = uid;
+        await existingUser.save();
+        return res.status(200).json({
+          status: "success",
+          message: "Admin UID updated successfully",
+          data: { user: existingUser },
+        });
+      }
+
       return res.status(200).json({
         status: "success",
         message: "User already exists",
-        data: {
-          user: existingUser,
-        },
+        data: { user: existingUser },
       });
     }
 
-    let assignedRole = role;
-    if (phoneNumber === process.env.ADMIN_PHONE) {
-      assignedRole = "superadmin";
-    } else if (email === process.env.ADMIN_EMAIL) {
+    // Assign role dynamically
+    let assignedRole = role; // Use role passed in the request
+    if (
+      phoneNumber === process.env.ADMIN_PHONE ||
+      email === process.env.ADMIN_EMAIL
+    ) {
       assignedRole = "superadmin";
     }
 
-    // Create a new user based on the provided data
-    const newUser = await User.create({
-      uid: authType === "firebase" ? uid : null,
+    // Ensure valid role assignment
+    // if (!["user", "admin", "superadmin"].includes(assignedRole)) {
+    //   return res.status(400).json({
+    //     status: false,
+    //     message: "Invalid role specified",
+    //   });
+    // }
+
+    // Create the user
+    const newUserData = {
       email,
       phoneNumber,
       fullName,
       role: assignedRole,
       authType,
-    });
+      branch: assignedRole === "admin" ? branch : undefined,
+    };
+    
+    // Only add `uid` if it's provided
+    if (uid) {
+      newUserData.uid = uid;
+    }
+    
+    // Create the user
+    const newUser = new User(newUserData);
+    await newUser.save();
 
     res.status(201).json({
       status: "success",
-      data: {
-        user: newUser,
-      },
+      data: { user: newUser },
     });
   } catch (err) {
+    console.log(err)
+    if (err.code === 11000) {
+      // Handle duplicate field errors
+      return next(
+        new AppErr(
+          "Duplicate value detected for a unique field (uid, email, or phoneNumber)",
+          400
+        )
+      );
+    }
     next(new AppErr("Failed to create user", 500, err.message));
   }
 };
+
+
+
 
 // Get a specific user by ID
 const getUserById = async (req, res, next) => {

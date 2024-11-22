@@ -25,6 +25,11 @@ const theaterSchema = new Schema({
   price: { type: Number, required: true }, 
   minimumDecorationAmount: { type: Number, required: true }, 
   images: [{ type: String }],
+  branch: {
+        type: Schema.Types.ObjectId,
+        ref: "Branch",
+        required: [true, "Branch ID is required"],
+    },
   createdAt: { type: Date, default: Date.now }
 });
 
