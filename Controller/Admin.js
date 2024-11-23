@@ -1,274 +1,155 @@
-const { validationResult } = require("express-validator");
-const User = require("../Model/User");
-const AppErr = require("../Services/AppErr");
-const Methods = require("../Services/GlobalMethod/Method");
-const bcrypt = require("bcrypt");
-const BranchModel = require("../Model/Branch");
+const mongoose = require("mongoose");
+const User = require("../Model/User"); // Adjust the path to your User model
+const AppErr = require("../Services/AppErr"); // Custom error handling utility
 
-const Api = new Methods();
-
-const CreateAdmin = async (req, res, next) => {
+/**
+ * Get all admins by branch ID.
+ */
+const getAllAdminByBranchId = async (req, res, next) => {
   try {
-    const { fullName, email, phoneNumber, branch, role = "admin", authType, uid } = req.body;
-
-    // Validate required fields
-    if (!branch) {
-      return next(new AppErr("Branch is required for admin", 400));
-    }
-    if (!authType) {
-      return next(new AppErr("Authentication type (authType) is required", 400));
+    const { branchId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(branchId)) {
+      return next(new AppErr("Invalid branch ID", 400));
     }
 
-    // Explicitly set uid to null if not provided
-    const newAdmin = new User({
-      fullName,
-      email,
-      phoneNumber,
-      role,
-      branch,
-      authType,
-      uid: uid || null, // If uid is not passed, store as null
+    const admins = await User.find({ branch: branchId, role: "admin" }).populate("branch")
+      .select("-__v -bookings") // Exclude unnecessary fields
+      .lean()
+      
+    res.status(200).json({
+      status: "success",
+      data: { admins },
     });
-
-    await newAdmin.save();
-
-    return res.status(201).json({
-      success: true,
-      statuscode: 201,
-      message: "Admin created successfully",
-      data: newAdmin,
-    });
-  } catch (error) {
-    if (error.code === 11000) {
-      return next(new AppErr("Duplicate entry for a unique field (e.g., email, phone, or uid)", 400));
-    }
-    return next(new AppErr(error.message, 500));
+  } catch (err) {
+    next(new AppErr("Failed to fetch admins by branch ID", 500, err.message));
   }
 };
 
-
-
-//-------------------------Update Admin --------------------------------//
-
-const UpdateAdmin = async (req, res, next) => {
+/**
+ * Toggle admin activation status.
+ */
+const toggleAdminStatus = async (req, res, next) => {
   try {
-    //-------Validation Check--------------//
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-      return next(new AppErr(result.errors[0].msg, 403));
-    }
-    let { id } = req.params;
-    let { name, email, number, branch } = req.body;
-    //---------------Check Email -------------------//
-    let EmailFound = await AdminModel.find({ Email: email, _id: { $ne: id } });
-    if (EmailFound.length > 0) {
-      return next(new AppErr("Email Already Exists", 402));
-    }
-    //---------------Check Number ------------------//
-    let NumberFound = await AdminModel.find({
-      Number: number,
-      _id: { $ne: id },
-    });
-    if (NumberFound.length > 0) {
-      return next(new AppErr("Number Already Exists", 402));
+    const { adminId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(adminId)) {
+      return next(new AppErr("Invalid admin ID", 400));
     }
 
-    //---------------Check Branch-------------------//
-    let branchData = await BranchModel.findById(branch);
-    if (!branchData) {
-      return next(new AppErr("Branch Not Found", 404));
-    }
-
-    //----------------Create Admin ---------------//
-    try {
-      const response = await Api.update(AdminModel, id, req.body);
-      if (response.status === 200) {
-        return res.status(200).json({
-          status: true,
-          statuscode: 200,
-          message: "Admin Updated successfully",
-          data: response,
-        });
-      } else {
-        return res.status(400).json({
-          status: false,
-          statuscode: 400,
-          message: response,
-        });
-      }
-    } catch (err) {
-      return res.status(400).json({
-        status: false,
-        statuscode: 400,
-        message: err.message,
-      });
-    }
-  } catch (error) {
-    return next(new AppErr(error.message, 500));
-  }
-};
-
-//--------------------Update Admin Branch ----------------------//
-
-const UpdateAdminBranch = async (req, res, next) => {
-  try {
-    let { branchid, adminid } = req.params;
-
-    //-----------Chaeck admin ------------------//
-    let admin = await AdminModel.findById(adminid);
+    const admin = await User.findById(adminId);
     if (!admin) {
       return next(new AppErr("Admin not found", 404));
     }
 
-    //-----------Check Admin Activate or not -----------//
-    if (!admin.activate) {
-      return next("Admin is not activated", 404);
-    }
-
-    //---------Check Branch ---------------//
-    let branch = await BranchModel.findById(branchid);
-    if (!branch) {
-      return next(new AppErr("Branch not found", 404));
-    }
-
-    //------------Update Admin----------------//
-    admin.branch = [];
-    admin.branch.push(branchid);
+    // Toggle the `activate` field
+    admin.activate = !admin.activate;
     await admin.save();
 
-    return res.status(200).json({
-      status: true,
-      statuscode: 200,
-      message: "Branch Updated successfully",
+    res.status(200).json({
+      status: "success",
+      message: `Admin ${admin.activate ? "activated" : "deactivated"} successfully`,
+      data: { admin },
     });
-  } catch (error) {
-    return next(new AppErr(error.message, 500));
+  } catch (err) {
+    next(new AppErr("Failed to toggle admin status", 500, err.message));
   }
 };
 
-//-----------------------Toggle Active Admin-------------------//
-
-const ToggleActiveAdmin = async (req, res, next) => {
+/**
+ * Update admin details.
+ */
+const updateAdmin = async (req, res, next) => {
   try {
-    let { id } = req.params;
-    //-----------Chaeck admin ------------------//
-    let admin = await AdminModel.findById(id);
+    const { adminId } = req.params;
+    const updates = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(adminId)) {
+      return next(new AppErr("Invalid admin ID", 400));
+    }
+
+    const admin = await User.findById(adminId);
     if (!admin) {
       return next(new AppErr("Admin not found", 404));
     }
 
-    if (admin.activate) {
-      admin.activate = false;
-    } else {
-      admin.activate = true;
-    }
+    // Update admin fields
+    Object.keys(updates).forEach((key) => {
+      admin[key] = updates[key];
+    });
+
     await admin.save();
-    return res.status(200).json({
-      status: true,
-      statuscode: 200,
-      message: "Admin successfully activated/deactivated",
+
+    res.status(200).json({
+      status: "success",
+      message: "Admin updated successfully",
+      data: { admin },
     });
-  } catch (error) {
-    return next(new AppErr(error.message, 500));
+  } catch (err) {
+    next(new AppErr("Failed to update admin details", 500, err.message));
   }
 };
 
-//------------Get All Admin ------------------//
-
-const GetAllAdmin = async (req, res, next) => {
+/**
+ * Delete admin by ID.
+ */
+const deleteAdmin = async (req, res, next) => {
   try {
-    const { branchid } = req.params;
+    const { adminId } = req.params;
 
-    if (!branchid) {
-      return next(new AppErr("Branch ID is required", 400));
+    if (!mongoose.Types.ObjectId.isValid(adminId)) {
+      return next(new AppErr("Invalid admin ID", 400));
     }
 
-    // Fetch all admins for the specified branch
-    const admins = await AdminModel.find({ branch: branchid }).populate("branch");
+    const admin = await User.findByIdAndDelete(adminId);
 
-    if (!admins || admins.length === 0) {
-      return next(new AppErr("No admins found for this branch", 404));
-    }
-
-    return res.status(200).json({
-      success: true,
-      statuscode: 200,
-      message: "Admins fetched successfully",
-      data: admins,
-    });
-  } catch (error) {
-    console.error(error);
-    return next(new AppErr(error.message, 500));
-  }
-};
-
-//-------------------Get Single Admin -------------------//
-
-const GetSingleAdmin = async (req, res, next) => {
-  try {
-    let { id } = req.params;
-    console.log(id)
-    let admin = await AdminModel.findById(id);
-    return res.status(200).json({
-      status: true,
-      statuscode: 200,
-      message: "Admin fetched successfully ",
-      data: admin,
-    });
-  } catch (error) {
-    return next(new AppErr(error.message, 500));
-  }
-};
-
-//--------------------------Login Admin ------------------------//
-
-const LoginAdmin = async (req, res, next) => {
-  try {
-    //-------Validation Check--------------//
-    const result = validationResult(req);
-    if (!result.isEmpty()) {
-      return next(new AppErr(result.errors[0].msg, 403));
-    }
-    let { Email, Password } = req.body;
-    //---------Find Admin --------------//
-
-    let admin = await AdminModel.find({ Email: Email });
     if (!admin) {
       return next(new AppErr("Admin not found", 404));
     }
 
-    if (!admin[0].activate) {
-      return next(new AppErr("Admin not activated! talk to super Admin", 404));
-    }
-
-    //--------------Check Password -------------//
-    let PasswordCheck = bcrypt.compareSync(Password, admin[0].Password);
-    if (!PasswordCheck) {
-      return next(new AppErr("Invalid Password", 404));
-    }
-
-    //-----------Generate Token-----------------//
-    const payload = { id: admin[0]._id,role:"admin" };
-    const token = GenerateToken(payload);
-
-    return res.status(200).json({
-      status: true,
-      statuscode: 200,
-      message: "Login successful",
-      data: admin,
-      token: token,
+    res.status(200).json({
+      status: "success",
+      message: "Admin deleted successfully",
     });
-  } catch (error) {
-    return next(new AppErr(error.message, 500));
+  } catch (err) {
+    next(new AppErr("Failed to delete admin", 500, err.message));
   }
 };
+
+/**
+ * Get a single admin by admin ID.
+ */
+const getSingleAdmin = async (req, res, next) => {
+  try {
+    const { adminId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(adminId)) {
+      return next(new AppErr("Invalid admin ID", 400));
+    }
+
+    const admin = await User.findById(adminId)
+      .select("-__v -bookings") // Exclude unnecessary fields
+      .lean();
+
+    if (!admin || admin.role !== "admin") {
+      return next(new AppErr("Admin not found", 404));
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: { admin },
+    });
+  } catch (err) {
+    next(new AppErr("Failed to fetch admin details", 500, err.message));
+  }
+};
+
+
+
 
 module.exports = {
-  CreateAdmin,
-  UpdateAdmin,
-  UpdateAdminBranch,
-  ToggleActiveAdmin,
-  GetAllAdmin,
-  GetSingleAdmin,
-  LoginAdmin,
+  getAllAdminByBranchId,
+  toggleAdminStatus,
+  updateAdmin,
+  deleteAdmin,
+  getSingleAdmin
 };
