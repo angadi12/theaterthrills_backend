@@ -126,7 +126,7 @@ const getSingleAdmin = async (req, res, next) => {
       return next(new AppErr("Invalid admin ID", 400));
     }
 
-    const admin = await User.findById(adminId)
+    const admin = await User.findById(adminId).populate("branch")
       .select("-__v -bookings") // Exclude unnecessary fields
       .lean();
 
