@@ -10,7 +10,8 @@ const {
   getAllTheaters,
   deleteTheater,
   getAvailableSlotsByLocation,
-  getAllTheaterLocations
+  getAllTheaterLocations,
+  getAllTheatersByBranchId
 } = require("../Controller/Theater");
 
 const TheaterRouter = express.Router();
@@ -22,7 +23,7 @@ TheaterRouter.post(
   [
     body("name").notEmpty().withMessage("Theater name is required"),
     body("location").notEmpty().withMessage("Location is required"),
-    body("capacity").isInt({ gt: 0 }).withMessage("Capacity must be a positive number"),
+    body("maxCapacity").isInt({ gt: 0 }).withMessage("Capacity must be a positive number"),
     body("amenities").optional().isArray().withMessage("Amenities must be an array of strings"),
     body("slots").optional().isArray().withMessage("Slots must be an array")
   ],
@@ -76,6 +77,8 @@ TheaterRouter.get(
 TheaterRouter.post('/availableSlotsByLocation', getAvailableSlotsByLocation);
 
 TheaterRouter.get('/theater/locations',getAllTheaterLocations);
+
+TheaterRouter.get("/theater/branch/:branchId", getAllTheatersByBranchId);
 
 
 module.exports = { TheaterRouter };
