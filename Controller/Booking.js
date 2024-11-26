@@ -439,6 +439,56 @@ const getBookingByUserId = async (req, res, next) => {
   }
 };
 
+
+const getAllBookingByTheaterId = async (req, res) => {
+  const { theaterId } = req.params;
+
+  try {
+    if (!theaterId) {
+      return res.status(400).json({ message: "Theater ID is required" });
+    }
+
+    const bookings = await Booking.find({ theater: theaterId })
+      .populate("user")
+      .populate("theater") 
+      .sort({ date: -1 })
+      .lean();
+
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({ message: "No bookings found for this theater" });
+    }
+
+    const theater = await Theater.findById(theaterId).select("slots").lean();
+    if (!theater) {
+      return res.status(404).json({ message: "Theater not found" });
+    }
+    const enrichedBookings = bookings.map(booking => {
+      const slotDetails = theater.slots.find(slot => slot._id.toString() === booking.slot.toString());
+      if (!slotDetails) {
+        console.warn(`Slot not found for booking ID: ${booking._id}`);
+      }
+      return {
+        ...booking,
+        slotDetails: slotDetails || null, // Add `null` if slot not found
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: enrichedBookings,
+    });
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error. Please try again later.",
+    });
+  }
+};
+
+
+
+
 module.exports = {
   createBooking,
   verifyPayment,
@@ -446,4 +496,5 @@ module.exports = {
   getBookingById,
   getBookingByUserId,
   createRazorpayOrder,
+  getAllBookingByTheaterId
 };

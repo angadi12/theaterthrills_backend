@@ -2,7 +2,7 @@ const express = require("express");
 const { body, param } = require("express-validator");
 const { isAdmin, isSuperAdmin } = require("../MiddleWare/IsUser");
 
-const { createBooking, verifyPayment,getAllBookings,getBookingById,getBookingByUserId,createRazorpayOrder } = require("../Controller/Booking");
+const { createBooking, verifyPayment,getAllBookings,getBookingById,getBookingByUserId,createRazorpayOrder,getAllBookingByTheaterId } = require("../Controller/Booking");
 
 const BookingRouter = express.Router();
 
@@ -49,6 +49,7 @@ BookingRouter.post(
 BookingRouter.get('/Getallbooking', getAllBookings);
 BookingRouter.get('/Getbookingbyid/:id', getBookingById);
 BookingRouter.get('/Getuserbooking/:userId', getBookingByUserId);
+BookingRouter.get('/Getallbookingbytheater/:theaterId', getAllBookingByTheaterId);
 
 
 

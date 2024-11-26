@@ -10,6 +10,7 @@ const { validationResult } = require("express-validator");
 const saveUnsavedBooking = async (req, res, next) => {
   try {
     const errors = validationResult(req);
+    console.log(errors)
     if (!errors.isEmpty()) {
       return next(new AppErr("Validation failed", 400, errors.array()));
     }
@@ -23,7 +24,7 @@ const saveUnsavedBooking = async (req, res, next) => {
       phoneNumber,
       whatsappNumber,
       email,
-      // numberOfPeople,
+      numberOfPeople,
       addDecorations,
       nickname,
       partnerNickname,
@@ -33,6 +34,7 @@ const saveUnsavedBooking = async (req, res, next) => {
       isEggless,
       addOns,
       paymentAmount,
+      paymentStatus,
       TotalAmount,
       orderId
     } = req.body;
@@ -48,12 +50,12 @@ const saveUnsavedBooking = async (req, res, next) => {
       user,
       theater: theaterId,
       slot: slotId,
-      date: selectedDate,
+      date: date,
       fullName,
       phoneNumber,
       whatsappNumber,
       email,
-      // numberOfPeople,
+      numberOfPeople,
       decorations: addDecorations,
       nickname,
       partnerNickname,
