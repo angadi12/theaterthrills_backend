@@ -4,6 +4,7 @@ const {
   saveUnsavedBooking,
   getAllUnsavedBookings,
   getUnsavedBookingById,
+  getAllunsavedBookingByTheaterId
   // deleteUnsavedBooking,
 } = require("../Controller/Unsaved");
 
@@ -21,6 +22,7 @@ UnsavedBookingRouter.post(
 );
 
 UnsavedBookingRouter.get("/getAllUnsavedBookings", getAllUnsavedBookings);
+UnsavedBookingRouter.get("/getAllUnsavedBookings/:theaterId", getAllunsavedBookingByTheaterId);
 
 UnsavedBookingRouter.get(
   "/getUnsavedBookingById/:id",

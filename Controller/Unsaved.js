@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const AppErr = require("../Services/AppErr");
 const UnsavedBooking = require("../Model/Unsaved");
 const { validationResult } = require("express-validator");
+const Theater = require("../Model/Theater");
 
  
 
@@ -146,10 +147,87 @@ const getUnsavedBookingById = async (req, res, next) => {
 
 ;
 
+// const getAllunsavedBookingByTheaterId = async (req, res, next) => {
+//   try {
+//     const { theaterId } = req.params;
+
+//     // Validate the theater ID
+//     if (!mongoose.Types.ObjectId.isValid(theaterId)) {
+//       return next(new AppErr("Invalid theater ID", 400));
+//     }
+
+//     // Fetch bookings for the specific theater ID
+//     const bookings = await UnsavedBooking.find({ theater: theaterId }).populate("user theater");
+
+//     if (!bookings.length) {
+//       return res.status(404).json({
+//         success: false,
+//         message: "No bookings found for this theater",
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       data: bookings,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching bookings by theater ID:", error.message);
+//     next(new AppErr("Error fetching bookings by theater ID", 500));
+//   }
+// };
+
+const getAllunsavedBookingByTheaterId = async (req, res) => {
+  const { theaterId } = req.params;
+
+  try {
+    if (!theaterId) {
+      return res.status(400).json({ message: "Theater ID is required" });
+    }
+
+    const bookings = await UnsavedBooking.find({ theater: theaterId })
+      .populate("user")
+      .populate("theater") 
+      .sort({ date: -1 })
+      .lean();
+
+    if (!bookings || bookings.length === 0) {
+      return res.status(404).json({ success: false, message: "Nobookings" });
+    }
+
+    const theater = await Theater.findById(theaterId).select("slots").lean();
+    if (!theater) {
+      return res.status(404).json({ message: "Theater not found" });
+    }
+    const enrichedBookings = bookings.map(booking => {
+      const slotDetails = theater.slots.find(slot => slot._id.toString() === booking.slot.toString());
+      if (!slotDetails) {
+        console.warn(`Slot not found for booking ID: ${booking._id}`);
+      }
+      return {
+        ...booking,
+        slotDetails: slotDetails || null, // Add `null` if slot not found
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: enrichedBookings,
+    });
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error. Please try again later.",
+    });
+  }
+};
+
+
 
 
 module.exports = {
     saveUnsavedBooking,
     getAllUnsavedBookings,
     getUnsavedBookingById,
+    getAllunsavedBookingByTheaterId
 };
