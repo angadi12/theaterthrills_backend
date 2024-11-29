@@ -104,9 +104,39 @@ const deleteContactById = async (req, res, next) => {
   }
 };
 
+
+const getContactsByDateRange = async (req, res, next) => {
+  try {
+    const { startDate, endDate } = req.query;
+
+    const query = {};
+
+    // Add date range filter if provided
+    if (startDate && endDate) {
+      query.createdAt = {
+        $gte: new Date(startDate), // Start date
+        $lte: new Date(endDate),   // End date
+      };
+    }
+
+    // Fetch contacts and sort by createdAt in descending order
+    const contacts = await Contact.find(query).sort({ createdAt: -1 });
+
+    res.status(200).json({
+      status: true,
+      message: "Contacts fetched successfully",
+      data: contacts,
+    });
+  } catch (error) {
+    return next(new AppErr(error.message, 500));
+  }
+};
+
+
 module.exports = {
   createContact,
   getContactById,
   getAllContacts,
   deleteContactById,
+  getContactsByDateRange
 };

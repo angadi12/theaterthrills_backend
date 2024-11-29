@@ -15,6 +15,8 @@ const {BookingRouter}=require("./Route/Booking")
 const {ContactRouter}=require("./Route/Contact")
 const {UnsavedBookingRouter}=require("./Route/Unsaved")
 const {AdminRouter}=require("./Route/Admin")
+const {Paymentrouter}=require("./Route/Payment")
+const {expenseRouter}=require("./Route/Expenses")
 const BranchRouter =require("./Route/Branch")
 
 const { createServer } = require("http");
@@ -50,6 +52,8 @@ app.use("/api/v1/Contact", ContactRouter );
 app.use("/api/v1/Unsaved", UnsavedBookingRouter );
 app.use("/api/v1/Branch", BranchRouter );
 app.use("/api/v1/Admin", AdminRouter );
+app.use("/api/v1/Payments", Paymentrouter );
+app.use("/api/v1/Expenses", expenseRouter );
 
 
 

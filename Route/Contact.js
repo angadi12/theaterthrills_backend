@@ -7,6 +7,7 @@ const {
   getAllContacts,
   getContactById,
   deleteContactById,
+  getContactsByDateRange
 } = require("../Controller/Contact");
 
 const ContactRouter = express.Router();
@@ -68,5 +69,8 @@ ContactRouter.delete(
   authenticateUser,
   deleteContactById
 );
+
+ContactRouter.get("/getllcontactsbydate", getContactsByDateRange);
+
 
 module.exports = { ContactRouter };
