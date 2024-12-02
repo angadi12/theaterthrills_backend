@@ -69,7 +69,7 @@ app.get("*", (req, res, next) => {
 app.use(globalErrHandler);
 
 const PORT = process.env.PORT || 9100;
-httpServer.listen(PORT, () => {
+app.listen(PORT, () => {
   DbConnection();
   console.log(`Server is running on http://localhost:${PORT}`);
 });
