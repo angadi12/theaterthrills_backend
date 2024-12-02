@@ -65,7 +65,7 @@ app.get("*", (req, res, next) => {
 
 
 
-//----------Global Error -----------/
+//----------Global Error -----------//
 app.use(globalErrHandler);
 
 const PORT = process.env.PORT || 9100;
