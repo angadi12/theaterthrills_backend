@@ -31,7 +31,7 @@ const app = express();
 app.use(cors());
 
 
-//------IN Build Middleware----------//
+//------IN Build Middleware----------/
 app.use(morgan("combined"));
 app.use(helmet());
 // app.use(cors());
