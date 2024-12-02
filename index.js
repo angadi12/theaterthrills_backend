@@ -59,7 +59,7 @@ app.use("/api/v1/Expenses", expenseRouter );
 
 //--------------Not Found Route-------------------//
 app.get("*", (req, res, next) => {
-  return next(new AppErr("Route not found", 404));
+  return next(new AppErr("Route not found ! please try after some time", 404));
 });
 
 
