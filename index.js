@@ -18,6 +18,8 @@ const {AdminRouter}=require("./Route/Admin")
 const {Paymentrouter}=require("./Route/Payment")
 const {expenseRouter}=require("./Route/Expenses")
 const BranchRouter =require("./Route/Branch")
+ DbConnection();
+
 
 // const { createServer } = require("http");
 // const { Server }= require("socket.io");
@@ -70,6 +72,5 @@ app.use(globalErrHandler);
 
 const PORT = process.env.PORT || 9100;
 app.listen(PORT, () => {
-  DbConnection();
   console.log(`Server is running on http://localhost:${PORT}`);
 });
