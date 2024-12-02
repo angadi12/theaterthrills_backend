@@ -20,12 +20,12 @@ const theaterSchema = new Schema({
   name: { type: String, required: true },
   location: { type: String, required: true },
   maxCapacity: { type: Number, required: true },
-  groupSize: { type: Number, required: true }, 
+  groupSize: { type: Number, required: true },
   amenities: [String],
   slots: [slotSchema],
   price: { type: Number, required: true },
   minimumDecorationAmount: { type: Number, required: true },
-  extraPerPerson: { type: Number, required: true }, 
+  extraPerPerson: { type: Number, required: true },
   images: [{ type: String }],
   branch: {
     type: Schema.Types.ObjectId,
@@ -35,7 +35,7 @@ const theaterSchema = new Schema({
   status: {
     type: String,
     enum: ["available", "coming soon", "under maintenance"],
-    default: "available", 
+    default: "available",
   },
   createdAt: { type: Date, default: Date.now },
 });
