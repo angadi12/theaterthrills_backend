@@ -21,14 +21,14 @@ const BranchRouter =require("./Route/Branch")
  DbConnection();
 
 
-// const { createServer } = require("http");
-// const { Server }= require("socket.io");
-// const {initSocket}=require("./Services/Socket")
+const { createServer } = require("http");
+const { Server }= require("socket.io");
+const {initSocket}=require("./Services/Socket")
 
 
 const app = express();
-// const httpServer = createServer(app);
-// initSocket(httpServer)
+const httpServer = createServer(app);
+initSocket(httpServer)
 
 app.use(cors());
 
@@ -71,6 +71,6 @@ app.get("*", (req, res, next) => {
 app.use(globalErrHandler);
 
 const PORT = process.env.PORT || 9100;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
