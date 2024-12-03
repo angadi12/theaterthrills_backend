@@ -163,7 +163,7 @@ const createUser = async (req, res, next) => {
     // Create the user
     const newUserData = {
       email,
-      phoneNumber,
+      // phoneNumber,
       fullName,
       role: assignedRole,
       authType,
@@ -173,6 +173,9 @@ const createUser = async (req, res, next) => {
     // Only add `uid` if it's provided
     if (uid) {
       newUserData.uid = uid;
+    }
+    if (phoneNumber) {
+      newUserData.phoneNumber = phoneNumber;
     }
     
     // Create the user
