@@ -7,5 +7,9 @@
    "routes": [
        { "src": "/(.*)", "dest": "/index.js" }
    ],
-   "regions": ["bom1"]
+   "functions": {
+    "Controller/*.js": {
+      "regions": ["bom1"]
+    }
+  }
 }

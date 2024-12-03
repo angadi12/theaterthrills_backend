@@ -618,6 +618,91 @@ cron.schedule('0 0 * * *', async () => {
 
 
 
+const getTheaterAnalytics = async (req, res) => {
+  try {
+    const {  year } = req.query;
+    const {  theaterId } = req.params;
+
+    // Validate inputs
+    if (!theaterId || !year) {
+      return res.status(400).json({ message: "Theater ID and year are required." });
+    }
+
+    // Find the theater
+    const theater = await Theater.findById(theaterId);
+    if (!theater) {
+      return res.status(404).json({ message: "Theater not found." });
+    }
+
+    // Define the date range for the year
+    const startOfYear = new Date(`${year}-01-01T00:00:00.000Z`);
+    const endOfYear = new Date(`${year}-12-31T23:59:59.999Z`);
+
+    // Fetch bookings within the date range for the given theater
+    const bookings = await Booking.aggregate([
+      {
+        $match: {
+          theater: theater._id,
+          date: { $gte: startOfYear, $lte: endOfYear },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$date" },
+          totalBookings: { $sum: 1 },
+          totalRevenue: { $sum: "$TotalAmount" },
+        },
+      },
+      {
+        $project: {
+          month: "$_id",
+          totalBookings: 1,
+          totalRevenue: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { month: 1 } },
+    ]);
+
+    // Generate a full monthly report, filling in months without data
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const formattedData = Array.from({ length: 12 }, (_, index) => {
+      const monthData = bookings.find((b) => b.month === index + 1);
+      return {
+        month: months[index],
+        totalBookings: monthData?.totalBookings || 0,
+        totalRevenue: monthData?.totalRevenue || 0,
+      };
+    });
+
+    res.json({
+      theater: theater.name,
+      year,
+      analytics: formattedData,
+    });
+  } catch (error) {
+    console.error("Error fetching theater analytics:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+
+
+
 
 module.exports = {
   createTheater,
@@ -628,6 +713,7 @@ module.exports = {
   getAllTheaters,
   getAvailableSlotsByLocation,
   getAllTheaterLocations,
-  getAllTheatersByBranchId
+  getAllTheatersByBranchId,
+  getTheaterAnalytics
   };
   

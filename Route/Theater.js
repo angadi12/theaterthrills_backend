@@ -11,7 +11,8 @@ const {
   deleteTheater,
   getAvailableSlotsByLocation,
   getAllTheaterLocations,
-  getAllTheatersByBranchId
+  getAllTheatersByBranchId,
+  getTheaterAnalytics
 } = require("../Controller/Theater");
 
 const TheaterRouter = express.Router();
@@ -79,6 +80,10 @@ TheaterRouter.post('/availableSlotsByLocation', getAvailableSlotsByLocation);
 TheaterRouter.get('/theater/locations',getAllTheaterLocations);
 
 TheaterRouter.get("/theater/branch/:branchId", getAllTheatersByBranchId);
+
+
+TheaterRouter.get("/theater/getTheaterAnalytics/:theaterId", getTheaterAnalytics);
+
 
 
 module.exports = { TheaterRouter };

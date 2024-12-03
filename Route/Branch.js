@@ -5,7 +5,8 @@ const {
   UpdateBranch,
   GetAllBranch,
   GetSingleBranch,
-  DeleteBranch
+  DeleteBranch,
+  getBranchAnalytics
 } = require("../Controller/Branch");
 
 const BranchRouter = express.Router();
@@ -24,6 +25,8 @@ BranchRouter.put(
 );
 BranchRouter.get("/get/branch", GetAllBranch);
 BranchRouter.get("/get/branch/:id", GetSingleBranch);
+
+BranchRouter.get("/get/getBranchAnalytics", getBranchAnalytics);
 BranchRouter.delete("/delete/:id", DeleteBranch);
 
 module.exports = BranchRouter;

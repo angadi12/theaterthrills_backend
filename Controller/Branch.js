@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 const Branch = require("../Model/Branch");
 const { validationResult } = require("express-validator");
 const AppErr = require("../Services/AppErr");
+const Booking = require('../Model/Booking'); // Adjust the path to your model
+const Theater= require('../Model/Theater');
 
 // Create a new branch
 const CreateBranch = async (req, res, next) => {
@@ -155,11 +157,47 @@ module.exports = {
 };
 
 
+const getBranchAnalytics = async (req, res) => {
+  try {
+    // Fetch all branches with their details
+    const branches = await Branch.find();
+
+    // Collect analytics for each branch
+    const analytics = await Promise.all(
+      branches.map(async (branch) => {
+        // Find all theaters for the branch
+        const theaters = await Theater.find({ branch: branch._id });
+
+        // Collect all theater IDs
+        const theaterIds = theaters.map((theater) => theater._id);
+
+        // Fetch total bookings for the branch by theater IDs
+        const totalBookings = await Booking.countDocuments({
+          theater: { $in: theaterIds },
+        });
+
+        // Calculate total theaters in the branch
+        const totalTheaters = theaters.length;
+
+        return {
+          branchDetails: branch, // Populate full branch details
+          totalBookings,
+          totalTheaters,
+        };
+      })
+    );
+
+    res.status(200).json(analytics);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
 
 module.exports = {
   CreateBranch,
   UpdateBranch,
   GetAllBranch,
   GetSingleBranch,
-  DeleteBranch
+  DeleteBranch,
+  getBranchAnalytics
 };
