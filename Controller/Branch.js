@@ -4,6 +4,7 @@ const { validationResult } = require("express-validator");
 const AppErr = require("../Services/AppErr");
 const Booking = require('../Model/Booking'); // Adjust the path to your model
 const Theater= require('../Model/Theater');
+const User = require("../Model/User");
 
 // Create a new branch
 const CreateBranch = async (req, res, next) => {
@@ -480,6 +481,67 @@ const Getbranchsummary = async (req, res) => {
 };
 
 
+
+const getBranchdetails = async (req, res) => {
+  try {
+    const { branchId } = req.params; // Extract branchId from the request parameters
+
+    // Validate branchId
+    if (!branchId) {
+      return res.status(400).json({
+        success: false,
+        message: "Branch ID is required",
+      });
+    }
+
+    const branchObjectId = new mongoose.Types.ObjectId(branchId); // Convert to ObjectId
+
+    // Fetch admin count for the branch
+    const adminCountResult = await User.aggregate([
+      { $match: { branch: branchObjectId, role: "admin" } }, // Filter by branch and role
+      {
+        $group: {
+          _id: "$branch",
+          adminCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Fetch theater count for the branch
+    const theaterCountResult = await Theater.aggregate([
+      { $match: { branch: branchObjectId } }, // Filter by branch
+      {
+        $group: {
+          _id: "$branch",
+          theaterCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Prepare the response
+    const adminCount = adminCountResult.length > 0 ? adminCountResult[0].adminCount : 0;
+    const theaterCount = theaterCountResult.length > 0 ? theaterCountResult[0].theaterCount : 0;
+
+    res.status(200).json({
+      success: true,
+      data: {
+        branch: branchId,
+        adminCount,
+        theaterCount,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching branch summary:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch branch summary",
+    });
+  }
+};
+
+
+
+
 module.exports = {
   CreateBranch,
   UpdateBranch,
@@ -487,5 +549,6 @@ module.exports = {
   GetSingleBranch,
   DeleteBranch,
   getBranchAnalytics,
-  Getbranchsummary
+  Getbranchsummary,
+  getBranchdetails
 };
