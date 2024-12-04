@@ -193,11 +193,299 @@ const getBranchAnalytics = async (req, res) => {
   }
 };
 
+
+
+
+
+// const Getbranchsummary = async (req, res) => {
+//   try {
+//     const { branchId } = req.params; // Extract branchId from query parameters
+//     const currentDate = new Date(); // Current date
+
+//    // Validate branchId
+//    if (!branchId) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Branch ID is required",
+//     });
+//   }
+
+//   const bookingSummary = await Theater.aggregate([
+//     {
+//       $match: {
+//         branch: new mongoose.Types.ObjectId(branchId), // Use `new` keyword with ObjectId
+//       },
+//     },
+//     {
+//       $addFields: {
+//         activeBookings: {
+//           $size: {
+//             $filter: {
+//               input: "$slots",
+//               as: "slot",
+//               cond: {
+//                 $and: [
+//                   { $gte: [currentDate, { $arrayElemAt: ["$$slot.dates.date", 0] }] }, // Slot start date <= current date
+//                   { $lte: [currentDate, { $arrayElemAt: ["$$slot.dates.date", -1] }] }, // Slot end date >= current date
+//                 ],
+//               },
+//             },
+//           },
+//         },
+//         upcomingBookings: {
+//           $size: {
+//             $filter: {
+//               input: "$slots",
+//               as: "slot",
+//               cond: {
+//                 $gt: [
+//                   { $arrayElemAt: ["$$slot.dates.date", 0] }, // Slot start date
+//                   currentDate, // Start date > current date
+//                 ],
+//               },
+//             },
+//           },
+//         },
+//         completedBookings: {
+//           $size: {
+//             $filter: {
+//               input: "$slots",
+//               as: "slot",
+//               cond: {
+//                 $and: [
+//                   { $lt: [{ $arrayElemAt: ["$$slot.dates.date", -1] }, currentDate] }, // Slot end date < current date
+//                   { $ne: [{ $size: "$$slot.dates" }, 0] }, // Dates array is not empty
+//                 ],
+//               },
+//             },
+//           },
+//         },
+//       },
+//     },
+//     {
+//       $group: {
+//         _id: "$branch",
+//         branchName: { $first: "$branchDetails.Branchname" },
+//         activeBookings: { $sum: "$activeBookings" },
+//         upcomingBookings: { $sum: "$upcomingBookings" },
+//         completedBookings: { $sum: "$completedBookings" },
+//       },
+//     },
+//   ]);
+ 
+
+//   res.status(200).json({
+//     success: true,
+//     data: bookingSummary,
+//   });
+// } catch (error) {
+//   console.error("Error fetching booking summary:", error);
+//   res.status(500).json({
+//     success: false,
+//     message: "An error occurred while fetching the booking summary",
+//   });
+// }
+// }
+// const Getbranchsummary = async (req, res) => {
+//   try {
+//     const { branchId } = req.params; // Extract branchId from query parameters
+//     const currentDate = new Date(); // Current date
+    
+//     // Normalize the current date to midnight to avoid time issues
+//     const startOfDay = new Date(currentDate.setHours(0, 0, 0, 0)); // Normalize current date to 00:00:00
+//     const endOfDay = new Date(startOfDay); 
+//     endOfDay.setHours(23, 59, 59, 999); // End of day (23:59:59.999)
+
+//     // Validate branchId
+//     if (!branchId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Branch ID is required",
+//       });
+//     }
+
+//     const bookingSummary = await Theater.aggregate([
+//       {
+//         $match: {
+//           branch: new mongoose.Types.ObjectId(branchId), // Use `new` keyword with ObjectId
+//         },
+//       },
+//       {
+//         $addFields: {
+//           activeBookings: {
+//             $size: {
+//               $filter: {
+//                 input: "$slots",
+//                 as: "slot",
+//                 cond: {
+//                   $and: [
+//                     // Active bookings: Slot start date <= current date AND Slot end date >= current date
+//                     { $lte: [{ $arrayElemAt: ["$$slot.dates.date", 0] }, endOfDay] }, // Slot start date <= current date
+//                     { $gte: [{ $arrayElemAt: ["$$slot.dates.date", -1] }, startOfDay] }, // Slot end date >= current date
+//                   ],
+//                 },
+//               },
+//             },
+//           },
+//           upcomingBookings: {
+//             $size: {
+//               $filter: {
+//                 input: "$slots",
+//                 as: "slot",
+//                 cond: {
+//                   // Upcoming bookings: Slot start date > current date
+//                   $gt: [{ $arrayElemAt: ["$$slot.dates.date", 0] }, endOfDay],
+//                 },
+//               },
+//             },
+//           },
+//           completedBookings: {
+//             $size: {
+//               $filter: {
+//                 input: "$slots",
+//                 as: "slot",
+//                 cond: {
+//                   $and: [
+//                     // Completed bookings: Slot end date < current date
+//                     { $lt: [{ $arrayElemAt: ["$$slot.dates.date", -1] }, startOfDay] }, // Slot end date < current date
+//                     // Ensure dates array is not empty (there are actual dates in the slot)
+//                     { $ne: [{ $size: "$$slot.dates" }, 0] },
+//                   ],
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: "$branch",
+//           branchName: { $first: "$branchDetails.Branchname" },
+//           activeBookings: { $sum: "$activeBookings" },
+//           upcomingBookings: { $sum: "$upcomingBookings" },
+//           completedBookings: { $sum: "$completedBookings" },
+//         },
+//       },
+//     ]);
+
+//     res.status(200).json({
+//       success: true,
+//       data: bookingSummary,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching booking summary:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while fetching the booking summary",
+//     });
+//   }
+// };
+
+const Getbranchsummary = async (req, res) => {
+  try {
+    const { branchId } = req.params; // Extract branchId from query parameters
+    const currentDate = new Date(); // Current date
+    
+    // Normalize the current date to midnight (removing time part)
+    const startOfDay = new Date(currentDate.setHours(0, 0, 0, 0)); // Normalize current date to 00:00:00
+    const endOfDay = new Date(startOfDay); 
+    endOfDay.setHours(23, 59, 59, 999); // End of day (23:59:59.999)
+
+    // Validate branchId
+    if (!branchId) {
+      return res.status(400).json({
+        success: false,
+        message: "Branch ID is required",
+      });
+    }
+
+    const bookingSummary = await Theater.aggregate([
+      {
+        $match: {
+          branch: new mongoose.Types.ObjectId(branchId), // Use `new` keyword with ObjectId
+        },
+      },
+      {
+        $addFields: {
+          activeBookings: {
+            $size: {
+              $filter: {
+                input: "$slots",
+                as: "slot",
+                cond: {
+                  $and: [
+                    // Active bookings: Slot start date <= current date AND Slot end date >= current date
+                    { $lte: [{ $arrayElemAt: ["$$slot.dates.date", 0] }, endOfDay] }, // Slot start date <= current date
+                    { $gte: [{ $arrayElemAt: ["$$slot.dates.date", -1] }, startOfDay] }, // Slot end date >= current date
+                  ],
+                },
+              },
+            },
+          },
+          upcomingBookings: {
+            $size: {
+              $filter: {
+                input: "$slots",
+                as: "slot",
+                cond: {
+                  // Upcoming bookings: Slot start date > current date
+                  $gt: [
+                    { $arrayElemAt: ["$$slot.dates.date", 0] }, // Slot start date
+                    startOfDay, // Start date > current date (normalized to start of day)
+                  ],
+                },
+              },
+            },
+          },
+          completedBookings: {
+            $size: {
+              $filter: {
+                input: "$slots",
+                as: "slot",
+                cond: {
+                  $and: [
+                    // Completed bookings: Slot end date < current date
+                    { $lt: [{ $arrayElemAt: ["$$slot.dates.date", -1] }, startOfDay] }, // Slot end date < current date
+                    // Ensure dates array is not empty (there are actual dates in the slot)
+                    { $ne: [{ $size: "$$slot.dates" }, 0] },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        $group: {
+          _id: "$branch",
+          branchName: { $first: "$branchDetails.Branchname" },
+          activeBookings: { $sum: "$activeBookings" },
+          upcomingBookings: { $sum: "$upcomingBookings" },
+          completedBookings: { $sum: "$completedBookings" },
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: bookingSummary,
+    });
+  } catch (error) {
+    console.error("Error fetching booking summary:", error);
+    res.status(500).json({
+      success: false,
+      message: "An error occurred while fetching the booking summary",
+    });
+  }
+};
+
+
 module.exports = {
   CreateBranch,
   UpdateBranch,
   GetAllBranch,
   GetSingleBranch,
   DeleteBranch,
-  getBranchAnalytics
+  getBranchAnalytics,
+  Getbranchsummary
 };

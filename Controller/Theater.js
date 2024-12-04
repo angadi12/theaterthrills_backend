@@ -262,6 +262,31 @@ const getAllTheaterLocations = async (req, res, next) => {
 
 
 
+// const getAllTheatersByBranchId = async (req, res, next) => {
+//   try {
+//     const { branchId } = req.params;
+
+//     if (!mongoose.Types.ObjectId.isValid(branchId)) {
+//       return next(new AppErr("Invalid branch ID", 400));
+//     }
+
+//     const theaters = await Theater.find({ branch: branchId }).populate('branch');
+
+//     if (theaters.length === 0) {
+//       return next(new AppErr("No theaters found for the given branch", 404));
+//     }
+
+//     res.status(200).json({
+//       status: true,
+//       data: theaters,
+//       message: "Theaters fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error fetching theaters by branch:", error.message);
+//     next(new AppErr("Error fetching theaters", 500, error.message));
+//   }
+// };
+
 const getAllTheatersByBranchId = async (req, res, next) => {
   try {
     const { branchId } = req.params;
@@ -270,7 +295,11 @@ const getAllTheatersByBranchId = async (req, res, next) => {
       return next(new AppErr("Invalid branch ID", 400));
     }
 
-    const theaters = await Theater.find({ branch: branchId }).populate('branch');
+    const theaters = await Theater.find({ branch: branchId }).populate("branch");
+
+    if (!theaters) {
+      return next(new AppErr("Query failed to execute", 500));
+    }
 
     if (theaters.length === 0) {
       return next(new AppErr("No theaters found for the given branch", 404));
@@ -282,11 +311,13 @@ const getAllTheatersByBranchId = async (req, res, next) => {
       message: "Theaters fetched successfully",
     });
   } catch (error) {
-    console.error("Error fetching theaters by branch:", error.message);
-    next(new AppErr("Error fetching theaters", 500, error.message));
+    console.error("Error fetching theaters by branch:", {
+      message: error.message,
+      stack: error.stack,
+    });
+    next(new AppErr("Error fetching theaters", 500, error));
   }
 };
-
 
 
 
