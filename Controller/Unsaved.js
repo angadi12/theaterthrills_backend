@@ -3,6 +3,7 @@ const AppErr = require("../Services/AppErr");
 const UnsavedBooking = require("../Model/Unsaved");
 const { validationResult } = require("express-validator");
 const Theater = require("../Model/Theater");
+const nodemailer = require("nodemailer");
 
  
 
@@ -223,11 +224,149 @@ const getAllunsavedBookingByTheaterId = async (req, res) => {
 };
 
 
+const sendunsavedBookingEmail = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;  // Get booking ID from params
 
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return next(new AppErr("Invalid booking ID", 400));
+    }
+
+    // Fetch the booking by ID
+    const booking = await UnsavedBooking.findById(bookingId).populate("user", "name email");
+
+    if (!booking) {
+      return next(new AppErr("Booking not found", 404));
+    }
+
+    // Fetch the related theater and slot details
+    const theater = await Theater.findById(booking.theater);
+    if (!theater) {
+      return next(new AppErr("Theater not found", 404));
+    }
+
+    const slot = theater.slots.id(booking.slot);
+    if (!slot) {
+      return next(new AppErr("Slot not found", 404));
+    }
+
+
+    // Prepare email template
+    const emailTemplate = `
+   <!DOCTYPE html>
+ <html lang="en">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>Complete Your Booking</title>
+     <style>
+         body {
+             font-family: Arial, sans-serif;
+             line-height: 1.6;
+             color: #333333;
+             max-width: 600px;
+             margin: 0 auto;
+             padding: 20px;
+         }
+         .logo {
+             text-align: center;
+             margin-bottom: 20px;
+         }
+         .logo img {
+             max-width: 200px;
+             height: auto;
+         }
+         .header {
+             background-color: #004AAD;
+             color: #ffffff;
+             padding: 20px;
+             text-align: center;
+         }
+         .content {
+             background-color: #f9f9f9;
+             padding: 20px;
+             border-radius: 5px;
+         }
+         .button {
+             display: inline-block;
+             background-color: #F30278;
+             color: #ffffff;
+             padding: 10px 20px;
+             text-decoration: none;
+             border-radius: 5px;
+             margin-top: 20px;
+         }
+         .footer {
+             text-align: center;
+             margin-top: 20px;
+             font-size: 12px;
+             color: #666666;
+         }
+     </style>
+ </head>
+ <body>
+     <div class="logo">
+         <img src="https://firebasestorage.googleapis.com/v0/b/awt-website-769f8.appspot.com/o/Logo.png?alt=media&token=d8826565-b850-4d05-8bfa-5be8061f70f6" alt="Company Logo" class="logo">
+     </div>
+     <div class="header">
+         <h1>Complete Your Booking</h1>
+     </div>
+     <div class="content">
+         <p>Dear ${booking.fullName},</p>
+         <p>We noticed that you started a booking with us but didn't complete the process. We'd love to help you finish your reservation!</p>
+         <p>Here's what we have so far:</p>
+         <ul>
+              <li><strong>Date:</strong> ${booking.date}</li>
+                <li><strong>Time:</strong> ${slot.startTime} - ${slot.endTime}</li>
+                <li><strong>Service:</strong> ${booking.Occasionobject}</li>
+                <li><strong>Location:</strong> ${theater.location}</li>
+         </ul>
+         <p>Don't miss out on securing your spot. It only takes a few more minutes to complete your booking.</p>
+         <p>If you have any questions or need assistance, our customer support team is here to help.</p>
+         <a href="https://www.thetheatrethrills.com" class="button">Complete Your Booking</a>
+     </div>
+     <div class="footer">
+         <p>&copy;2024 THE THEATRE THRILLS. All rights reserved.</p>
+         <p>If you have any questions, please contact us at [contact@example.com]</p>
+     </div>
+ </body>
+ </html>
+    `;
+
+    // Setup Nodemailer transport
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // Replace with your email service (e.g., "Gmail")
+      auth: {
+        user: process.env.NODE_Email,
+        pass: process.env.NODE_Pass,
+      },
+    });
+
+    // Email options
+    const mailOptions = {
+      from: process.env.NODE_Email,
+      to: booking.user.email || booking.email, // Receiver address
+      subject: "Booking Reminder",
+      html: emailTemplate, // HTML body content
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      success: true,
+      message: "Booking reminder sent successfully!",
+    });
+  } catch (error) {
+    console.error("Error sending email:", error.message);
+    next(new AppErr("Error sending email", 500));
+  }
+};
 
 module.exports = {
     saveUnsavedBooking,
     getAllUnsavedBookings,
     getUnsavedBookingById,
-    getAllunsavedBookingByTheaterId
+    getAllunsavedBookingByTheaterId,
+    sendunsavedBookingEmail
 };

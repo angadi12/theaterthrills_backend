@@ -7,7 +7,8 @@ const {
   getAllContacts,
   getContactById,
   deleteContactById,
-  getContactsByDateRange
+  getContactsByDateRange,
+  sendEmailtouser
 } = require("../Controller/Contact");
 
 const ContactRouter = express.Router();
@@ -66,11 +67,12 @@ ContactRouter.get(
 ContactRouter.delete(
   "/contact/delete/:id",
   param("id").isMongoId().withMessage("Invalid contact ID"),
-  authenticateUser,
   deleteContactById
 );
 
 ContactRouter.get("/getllcontactsbydate", getContactsByDateRange);
+
+ContactRouter.post("/send-ticket-email", sendEmailtouser);
 
 
 module.exports = { ContactRouter };

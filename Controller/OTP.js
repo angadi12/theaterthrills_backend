@@ -188,3 +188,265 @@ module.exports = {
   sendOtp,
   verifyOtp,
 };
+
+
+
+
+// send reminder
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+//     <meta charset="UTF-8">
+//     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//     <title>Booking Reminder</title>
+//     <style>
+//         body {
+//             font-family: Arial, sans-serif;
+//             line-height: 1.6;
+//             color: #333333;
+//             max-width: 600px;
+//             margin: 0 auto;
+//             padding: 20px;
+//         }
+//         .logo {
+//             text-align: center;
+//             margin-bottom: 20px;
+//         }
+//         .logo img {
+//             max-width: 200px;
+//             height: auto;
+//         }
+//         .header {
+//             background-color: #004AAD;
+//             color: #ffffff;
+//             padding: 20px;
+//             text-align: center;
+//         }
+//         .content {
+//             background-color: #f9f9f9;
+//             padding: 20px;
+//             border-radius: 5px;
+//         }
+//         .button {
+//             display: inline-block;
+//             background-color: #F30278;
+//             color: #ffffff;
+//             padding: 10px 20px;
+//             text-decoration: none;
+//             border-radius: 5px;
+//             margin-top: 20px;
+//         }
+//         .footer {
+//             text-align: center;
+//             margin-top: 20px;
+//             font-size: 12px;
+//             color: #666666;
+//         }
+//     </style>
+// </head>
+// <body>
+//     <div class="logo">
+//         <img src="https://firebasestorage.googleapis.com/v0/b/awt-website-769f8.appspot.com/o/Logo.png?alt=media&token=d8826565-b850-4d05-8bfa-5be8061f70f6" alt="Company Logo" class="logo">
+//     </div>
+//     <div class="header">
+//         <h1>Booking Reminder</h1>
+//     </div>
+//     <div class="content">
+//         <p>Dear [Customer Name],</p>
+//         <p>This is a friendly reminder about your upcoming booking with us. Here are the details:</p>
+//         <ul>
+//             <li><strong>Date:</strong> [Booking Date]</li>
+//             <li><strong>Time:</strong> [Booking Time]</li>
+//             <li><strong>Service:</strong> [Service Name]</li>
+//             <li><strong>Location:</strong> [Location Details]</li>
+//         </ul>
+//         <p>We're looking forward to seeing you soon!</p>
+//         <p>If you need to make any changes to your booking, please don't hesitate to contact us.</p>
+//         <a href="[Booking Management URL]" class="button">Manage Your Booking</a>
+//     </div>
+//     <div class="footer">
+//         <p>&copy; 2023 [Your Company Name]. All rights reserved.</p>
+//         <p>If you have any questions, please contact us at [contact@example.com]</p>
+//     </div>
+// </body>
+// </html>
+
+// incomplete
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+//     <meta charset="UTF-8">
+//     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//     <title>Complete Your Booking</title>
+//     <style>
+//         body {
+//             font-family: Arial, sans-serif;
+//             line-height: 1.6;
+//             color: #333333;
+//             max-width: 600px;
+//             margin: 0 auto;
+//             padding: 20px;
+//         }
+//         .logo {
+//             text-align: center;
+//             margin-bottom: 20px;
+//         }
+//         .logo img {
+//             max-width: 200px;
+//             height: auto;
+//         }
+//         .header {
+//             background-color: #004AAD;
+//             color: #ffffff;
+//             padding: 20px;
+//             text-align: center;
+//         }
+//         .content {
+//             background-color: #f9f9f9;
+//             padding: 20px;
+//             border-radius: 5px;
+//         }
+//         .button {
+//             display: inline-block;
+//             background-color: #F30278;
+//             color: #ffffff;
+//             padding: 10px 20px;
+//             text-decoration: none;
+//             border-radius: 5px;
+//             margin-top: 20px;
+//         }
+//         .footer {
+//             text-align: center;
+//             margin-top: 20px;
+//             font-size: 12px;
+//             color: #666666;
+//         }
+//     </style>
+// </head>
+// <body>
+//     <div class="logo">
+//         <img src="https://firebasestorage.googleapis.com/v0/b/awt-website-769f8.appspot.com/o/Logo.png?alt=media&token=d8826565-b850-4d05-8bfa-5be8061f70f6" alt="Company Logo" class="logo">
+//     </div>
+//     <div class="header">
+//         <h1>Complete Your Booking</h1>
+//     </div>
+//     <div class="content">
+//         <p>Dear [Customer Name],</p>
+//         <p>We noticed that you started a booking with us but didn't complete the process. We'd love to help you finish your reservation!</p>
+//         <p>Here's what we have so far:</p>
+//         <ul>
+//             <li><strong>Service:</strong> [Partially Selected Service]</li>
+//             <li><strong>Date:</strong> [Partially Selected Date, if any]</li>
+//             <li><strong>Time:</strong> [Partially Selected Time, if any]</li>
+//         </ul>
+//         <p>Don't miss out on securing your spot. It only takes a few more minutes to complete your booking.</p>
+//         <p>If you have any questions or need assistance, our customer support team is here to help.</p>
+//         <a href="[Booking Completion URL]" class="button">Complete Your Booking</a>
+//     </div>
+//     <div class="footer">
+//         <p>&copy; 2023 [Your Company Name]. All rights reserved.</p>
+//         <p>If you have any questions, please contact us at [contact@example.com]</p>
+//     </div>
+// </body>
+// </html>
+
+
+// confirmation
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+//     <meta charset="UTF-8">
+//     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//     <title>Booking Confirmation</title>
+//     <style>
+//         body {
+//             font-family: Arial, sans-serif;
+//             line-height: 1.6;
+//             color: #333333;
+//             max-width: 600px;
+//             margin: 0 auto;
+//             padding: 20px;
+//         }
+//         .logo {
+//             text-align: center;
+//             margin-bottom: 20px;
+//         }
+//         .logo img {
+//             max-width: 200px;
+//             height: auto;
+//         }
+//         .header {
+//             background-color: #004AAD;
+//             color: #ffffff;
+//             padding: 20px;
+//             text-align: center;
+//         }
+//         .content {
+//             background-color: #f9f9f9;
+//             padding: 20px;
+//             border-radius: 5px;
+//         }
+//         .button {
+//             display: inline-block;
+//             background-color: #F30278;
+//             color: #ffffff;
+//             padding: 10px 20px;
+//             text-decoration: none;
+//             border-radius: 5px;
+//             margin-top: 20px;
+//         }
+//         .footer {
+//             text-align: center;
+//             margin-top: 20px;
+//             font-size: 12px;
+//             color: #666666;
+//         }
+//         .booking-details {
+//             background-color: #ffffff;
+//             border: 1px solid #dddddd;
+//             border-radius: 5px;
+//             padding: 15px;
+//             margin-top: 20px;
+//         }
+//         .booking-details h2 {
+//             color: #004AAD;
+//             margin-top: 0;
+//         }
+//     </style>
+// </head>
+// <body>
+//     <div class="logo">
+//         <img src="https://firebasestorage.googleapis.com/v0/b/awt-website-769f8.appspot.com/o/Logo.png?alt=media&token=d8826565-b850-4d05-8bfa-5be8061f70f6" alt="Company Logo" class="logo">
+//     </div>
+//     <div class="header">
+//         <h1>Booking Confirmation</h1>
+//     </div>
+//     <div class="content">
+//         <p>Dear [Customer Name],</p>
+//         <p>Great news! Your booking has been successfully confirmed. We're excited to serve you and look forward to your visit.</p>
+        
+//         <div class="booking-details">
+//             <h2>Your Booking Details</h2>
+//             <p><strong>Booking Reference:</strong> [Booking Reference Number]</p>
+//             <p><strong>Service:</strong> [Service Name]</p>
+//             <p><strong>Date:</strong> [Booking Date]</p>
+//             <p><strong>Time:</strong> [Booking Time]</p>
+//             <p><strong>Location:</strong> [Location Details]</p>
+//             <p><strong>Number of People:</strong> [Number of People]</p>
+//             <p><strong>Total Amount:</strong> [Total Amount]</p>
+//         </div>
+        
+//         <p>If you need to make any changes to your booking or have any questions, please don't hesitate to contact us. You can manage your booking by clicking the button below.</p>
+        
+//         <a href="[Booking Management URL]" class="button">Manage Your Booking</a>
+        
+//         <p>We recommend arriving [Recommended Arrival Time] before your scheduled time to ensure a smooth experience.</p>
+        
+//         <p>Thank you for choosing our services. We can't wait to see you!</p>
+//     </div>
+//     <div class="footer">
+//         <p>&copy; 2023 [Your Company Name]. All rights reserved.</p>
+//         <p>If you have any questions, please contact us at [contact@example.com]</p>
+//     </div>
+// </body>
+// </html>

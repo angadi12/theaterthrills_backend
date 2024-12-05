@@ -4,8 +4,9 @@ const {
   saveUnsavedBooking,
   getAllUnsavedBookings,
   getUnsavedBookingById,
-  getAllunsavedBookingByTheaterId
+  getAllunsavedBookingByTheaterId,
   // deleteUnsavedBooking,
+  sendunsavedBookingEmail
 } = require("../Controller/Unsaved");
 
 const UnsavedBookingRouter = express.Router();
@@ -23,6 +24,7 @@ UnsavedBookingRouter.post(
 
 UnsavedBookingRouter.get("/getAllUnsavedBookings", getAllUnsavedBookings);
 UnsavedBookingRouter.get("/getAllUnsavedBookings/:theaterId", getAllunsavedBookingByTheaterId);
+UnsavedBookingRouter.post('/send-unsavedbooking-email/:bookingId', sendunsavedBookingEmail);
 
 UnsavedBookingRouter.get(
   "/getUnsavedBookingById/:id",

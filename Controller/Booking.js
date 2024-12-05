@@ -5,6 +5,7 @@ const Booking = require("../Model/Booking");
 const { validationResult } = require("express-validator");
 const crypto = require("crypto");
 const razorpayInstance = require("../Services/Razorpayinstance");
+const nodemailer = require("nodemailer");
 
 // const createBooking = async (req, res, next) => {
 //   try {
@@ -335,25 +336,25 @@ const getAllBookings = async (req, res, next) => {
   }
 };
 
-const getBookingById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
+// const getBookingById = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return next(new AppErr("Invalid booking ID", 400));
-    }
+//     if (!mongoose.Types.ObjectId.isValid(id)) {
+//       return next(new AppErr("Invalid booking ID", 400));
+//     }
 
-    const booking = await Booking.findById(id);
+//     const booking = await Booking.findById(id);
 
-    if (!booking) {
-      return next(new AppErr("Booking not found", 404));
-    }
+//     if (!booking) {
+//       return next(new AppErr("Booking not found", 404));
+//     }
 
-    res.status(200).json({ success: true, data: booking });
-  } catch (error) {
-    next(new AppErr("Error fetching booking", 500));
-  }
-};
+//     res.status(200).json({ success: true, data: booking });
+//   } catch (error) {
+//     next(new AppErr("Error fetching booking", 500));
+//   }
+// };
 
 // Get bookings by user ID
 // const getBookingByUserId = async (req, res, next) => {
@@ -377,6 +378,70 @@ const getBookingById = async (req, res, next) => {
 //     next(new AppErr('Error fetching bookings for user', 500));
 //   }
 // };
+
+const getBookingById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return next(new AppErr("Invalid booking ID", 400));
+    }
+
+    // Fetch the booking by ID
+    const booking = await Booking.findById(id).populate("user", "phoneNumber email");
+
+    if (!booking) {
+      return next(new AppErr("Booking not found", 404));
+    }
+
+    // Fetch the related theater
+    const theater = await Theater.findById(booking.theater);
+    let enrichedBooking = booking.toObject(); // Convert Mongoose document to plain object
+
+    if (theater) {
+      // Fetch the related slot
+      const slot = theater.slots.id(booking.slot);
+
+      enrichedBooking = {
+        ...enrichedBooking,
+        theater: {
+          name: theater.name,
+          location: theater.location,
+          capacity: theater.capacity,
+          amenities: theater.amenities,
+          price: theater.price,
+          images: theater.images,
+        },
+        slot: slot
+          ? {
+              startTime: slot.startTime,
+              endTime: slot.endTime,
+              dates: slot.dates.map((d) => ({
+                date: d.date,
+                status: d.status,
+              })),
+            }
+          : null,
+        Addons: booking.addOns,
+        Cakes: booking.selectedCakes || {},
+      };
+    } else {
+      // If theater not found, set theater and slot to null
+      enrichedBooking = {
+        ...enrichedBooking,
+        theater: null,
+        slot: null,
+      };
+    }
+
+    res.status(200).json({ success: true, data: enrichedBooking });
+  } catch (error) {
+    console.error("Error fetching booking by ID:", error.message);
+    next(new AppErr("Error fetching booking", 500));
+  }
+};
+
+
 
 const getBookingByUserId = async (req, res, next) => {
   const { userId } = req.params;
@@ -488,6 +553,147 @@ const getAllBookingByTheaterId = async (req, res) => {
 
 
 
+const sendBookingEmail = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;  // Get booking ID from params
+
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      return next(new AppErr("Invalid booking ID", 400));
+    }
+
+    // Fetch the booking by ID
+    const booking = await Booking.findById(bookingId).populate("user", "name email");
+
+    if (!booking) {
+      return next(new AppErr("Booking not found", 404));
+    }
+
+    // Fetch the related theater and slot details
+    const theater = await Theater.findById(booking.theater);
+    if (!theater) {
+      return next(new AppErr("Theater not found", 404));
+    }
+
+    const slot = theater.slots.id(booking.slot);
+    if (!slot) {
+      return next(new AppErr("Slot not found", 404));
+    }
+
+
+    // Prepare email template
+    const emailTemplate = `
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Booking Reminder</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                line-height: 1.6;
+                color: #333333;
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            .logo {
+                text-align: center;
+                margin-bottom: 20px;
+            }
+            .logo img {
+                max-width: 200px;
+                height: auto;
+            }
+            .header {
+                background-color: #004AAD;
+                color: #ffffff;
+                padding: 20px;
+                text-align: center;
+            }
+            .content {
+                background-color: #f9f9f9;
+                padding: 20px;
+                border-radius: 5px;
+            }
+            .button {
+                display: inline-block;
+                background-color: #F30278;
+                color: #ffffff;
+                padding: 10px 20px;
+                text-decoration: none;
+                border-radius: 5px;
+                margin-top: 20px;
+            }
+            .footer {
+                text-align: center;
+                margin-top: 20px;
+                font-size: 12px;
+                color: #666666;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="logo">
+            <img src="https://firebasestorage.googleapis.com/v0/b/awt-website-769f8.appspot.com/o/Logo.png?alt=media&token=d8826565-b850-4d05-8bfa-5be8061f70f6" alt="Company Logo" class="logo">
+        </div>
+        <div class="header">
+            <h1>Booking Reminder</h1>
+        </div>
+        <div class="content">
+            <p>Dear ${booking.fullName},</p>
+            <p>This is a friendly reminder about your upcoming booking with us. Here are the details:</p>
+            <ul>
+                <li><strong>Date:</strong> ${booking.date}</li>
+                <li><strong>Time:</strong> ${slot.startTime} - ${slot.endTime}</li>
+                <li><strong>Service:</strong> ${booking.Occasionobject}</li>
+                <li><strong>Location:</strong> ${theater.location}</li>
+            </ul>
+            <p>We're looking forward to seeing you soon!</p>
+            <p>If you need to make any changes to your booking, please don't hesitate to contact us.</p>
+            <a href="https://www.thetheatrethrills.com/bookings" class="button">Manage Your Booking</a>
+        </div>
+        <div class="footer">
+            <p>&copy; 2024 THE THEATRE THRILLS. All rights reserved.</p>
+            <p>If you have any questions, please contact us at [contact@example.com]</p>
+        </div>
+    </body>
+    </html>
+    `;
+
+    // Setup Nodemailer transport
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // Replace with your email service (e.g., "Gmail")
+      auth: {
+        user: process.env.NODE_Email,
+        pass: process.env.NODE_Pass,
+      },
+    });
+
+    // Email options
+    const mailOptions = {
+      from: process.env.NODE_Email,
+      to: booking.user.email || booking.email, // Receiver address
+      subject: "Booking Reminder",
+      html: emailTemplate, // HTML body content
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      success: true,
+      message: "Booking reminder sent successfully!",
+    });
+  } catch (error) {
+    console.error("Error sending email:", error.message);
+    next(new AppErr("Error sending email", 500));
+  }
+};
+
+
+
+
 
 module.exports = {
   createBooking,
@@ -496,5 +702,6 @@ module.exports = {
   getBookingById,
   getBookingByUserId,
   createRazorpayOrder,
-  getAllBookingByTheaterId
+  getAllBookingByTheaterId,
+  sendBookingEmail
 };
