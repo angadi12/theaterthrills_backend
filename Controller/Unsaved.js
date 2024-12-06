@@ -363,10 +363,28 @@ const sendunsavedBookingEmail = async (req, res, next) => {
   }
 };
 
+
+const deletebookingById = async (req, res, next) => {
+  try {
+    const booking = await UnsavedBooking.findByIdAndDelete(req.params.id);
+    
+    res.status(200).json({
+      status: "success",
+      data: "booking deleted successfully",
+    });
+  } catch (err) {
+    next(new AppErr("Failed to delete booking", 500, err));
+  }
+};
+
+
+
+
 module.exports = {
     saveUnsavedBooking,
     getAllUnsavedBookings,
     getUnsavedBookingById,
     getAllunsavedBookingByTheaterId,
-    sendunsavedBookingEmail
+    sendunsavedBookingEmail,
+    deletebookingById
 };

@@ -6,7 +6,8 @@ const {
   getUnsavedBookingById,
   getAllunsavedBookingByTheaterId,
   // deleteUnsavedBooking,
-  sendunsavedBookingEmail
+  sendunsavedBookingEmail,
+  deletebookingById
 } = require("../Controller/Unsaved");
 
 const UnsavedBookingRouter = express.Router();
@@ -30,6 +31,12 @@ UnsavedBookingRouter.get(
   "/getUnsavedBookingById/:id",
   [param("id").isMongoId().withMessage("Invalid Booking ID")],
   getUnsavedBookingById
+);
+
+UnsavedBookingRouter.delete(
+  "/deletebookingById/:id",
+  [param("id").isMongoId().withMessage("Invalid Booking ID")],
+  deletebookingById
 );
 
 // UnsavedBookingRouter.delete(

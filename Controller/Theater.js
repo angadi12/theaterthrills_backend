@@ -6,6 +6,7 @@ const AppErr = require("../Services/AppErr");
 const Booking = require('../Model/Booking'); // Adjust the path to your model
 const { validationResult } = require("express-validator");
 const cron = require('node-cron');
+const moment = require("moment-timezone");
 
 // Create a new theater
 // const createTheater = async (req, res, next) => {
@@ -321,83 +322,83 @@ const getAllTheatersByBranchId = async (req, res, next) => {
 
 
 
-const getAllTheaters = async (req, res, next) => {
-  try {
-    const { date } = req.query;
+// const getAllTheaters = async (req, res, next) => {
+//   try {
+//     const { date } = req.query;
 
-    const selectedDate = new Date(date);
-    if (isNaN(selectedDate.getTime())) {
-      return next(new AppErr("Invalid date format", 400));
-    }
+//     const selectedDate = new Date(date);
+//     if (isNaN(selectedDate.getTime())) {
+//       return next(new AppErr("Invalid date format", 400));
+//     }
 
-    const theaters = await Theater.find();
-    if (theaters.length === 0) {
-      return next(new AppErr("No theaters found", 404));
-    }
+//     const theaters = await Theater.find();
+//     if (theaters.length === 0) {
+//       return next(new AppErr("No theaters found", 404));
+//     }
 
-    const availableSlotsByTheater = [];
+//     const availableSlotsByTheater = [];
 
-    for (const theater of theaters) {
-      const now = new Date();
-      const isToday = now.toDateString() === selectedDate.toDateString();
+//     for (const theater of theaters) {
+//       const now = new Date();
+//       const isToday = now.toDateString() === selectedDate.toDateString();
 
-      const availableSlots = theater.slots.filter((slot) => {
-        // Parse start and end times of the slot
-        const slotStartTime = new Date(`${selectedDate.toDateString()} ${slot.startTime}`);
-        const slotEndTime = new Date(`${selectedDate.toDateString()} ${slot.endTime}`);
+//       const availableSlots = theater.slots.filter((slot) => {
+//         // Parse start and end times of the slot
+//         const slotStartTime = new Date(`${selectedDate.toDateString()} ${slot.startTime}`);
+//         const slotEndTime = new Date(`${selectedDate.toDateString()} ${slot.endTime}`);
 
-        // Calculate slot duration and minimum required remaining time
-        const slotDurationInMs = slotEndTime - slotStartTime;
-        const slotDurationInHours = slotDurationInMs / (1000 * 60 * 60);
-        const minBookingTimeMs = 1 * (1000 * 60 * 60); // 1 hour
+//         // Calculate slot duration and minimum required remaining time
+//         const slotDurationInMs = slotEndTime - slotStartTime;
+//         const slotDurationInHours = slotDurationInMs / (1000 * 60 * 60);
+//         const minBookingTimeMs = 1 * (1000 * 60 * 60); // 1 hour
 
-        // Check if slot is already booked
-        const dateEntry = slot.dates.find(
-          (entry) => entry.date.toDateString() === selectedDate.toDateString()
-        );
-        const isBooked = dateEntry && dateEntry.status === "booked";
+//         // Check if slot is already booked
+//         const dateEntry = slot.dates.find(
+//           (entry) => entry.date.toDateString() === selectedDate.toDateString()
+//         );
+//         const isBooked = dateEntry && dateEntry.status === "booked";
 
-        if (isBooked) return false;
+//         if (isBooked) return false;
 
-        if (isToday) {
-          const timeLeftInMs = slotEndTime - now;
-          const elapsedTimeMs = now - slotStartTime;
+//         if (isToday) {
+//           const timeLeftInMs = slotEndTime - now;
+//           const elapsedTimeMs = now - slotStartTime;
 
-          // Slot is valid if:
-          // - It's currently running and at least 1 hour is left
-          // - It hasn't started yet
-          return (
-            (slotStartTime <= now && timeLeftInMs >= minBookingTimeMs) || slotStartTime > now
-          );
-        }
+//           // Slot is valid if:
+//           // - It's currently running and at least 1 hour is left
+//           // - It hasn't started yet
+//           return (
+//             (slotStartTime <= now && timeLeftInMs >= minBookingTimeMs) || slotStartTime > now
+//           );
+//         }
 
-        // For future dates, slot is always valid
-        return true;
-      });
+//         // For future dates, slot is always valid
+//         return true;
+//       });
 
-      availableSlotsByTheater.push({
-        theaterId: theater._id,
-        name: theater.name,
-        location: theater.location,
-        capacity: theater.capacity,
-        amenities: theater.amenities,
-        price: theater.price,
-        minimumDecorationAmount: theater.minimumDecorationAmount,
-        images: theater.images,
-        availableSlots,
-      });
-    }
+//       availableSlotsByTheater.push({
+//         theaterId: theater._id,
+//         name: theater.name,
+//         location: theater.location,
+//         capacity: theater.capacity,
+//         amenities: theater.amenities,
+//         price: theater.price,
+//         minimumDecorationAmount: theater.minimumDecorationAmount,
+//         images: theater.images,
+//         availableSlots,
+//       });
+//     }
 
-    res.status(200).json({
-      status: true,
-      data: availableSlotsByTheater,
-      message: "Available slots filtered by date",
-    });
-  } catch (error) {
-    console.error("Error:", error.message);
-    next(new AppErr("Error fetching theaters and available slots", 500, error.message));
-  }
-};
+//     res.status(200).json({
+//       status: true,
+//       data: availableSlotsByTheater,
+//       message: "Available slots filtered by date",
+//     });
+//   } catch (error) {
+//     console.error("Error:", error.message);
+//     next(new AppErr("Error fetching theaters and available slots", 500, error.message));
+//   }
+// };
 
 
 
@@ -494,18 +495,97 @@ const getAllTheaters = async (req, res, next) => {
 
 
 
-const getAvailableSlotsByLocation = async (req, res, next) => {
+// const getAvailableSlotsByLocation = async (req, res, next) => {
+//   try {
+//     const { date, location } = req.body;
+
+//     const selectedDate = new Date(date);
+//     if (isNaN(selectedDate.getTime())) {
+//       return next(new AppErr("Invalid date format", 400));
+//     }
+
+//     const theaters = await Theater.find({ location });
+//     if (theaters.length === 0) {
+//       return next(new AppErr("No theaters found in the specified location", 404));
+//     }
+
+//     const availableSlotsByTheater = [];
+
+//     for (const theater of theaters) {
+//       const now = new Date();
+//       const isToday = now.toDateString() === selectedDate.toDateString();
+
+//       const availableSlots = theater.slots.filter((slot) => {
+//         // Parse start and end times of the slot
+//         const slotStartTime = new Date(`${selectedDate.toDateString()} ${slot.startTime}`);
+//         const slotEndTime = new Date(`${selectedDate.toDateString()} ${slot.endTime}`);
+
+//         // Calculate slot duration and minimum required remaining time
+//         const slotDurationInMs = slotEndTime - slotStartTime;
+//         const slotDurationInHours = slotDurationInMs / (1000 * 60 * 60);
+//         const minBookingTimeMs = 1 * (1000 * 60 * 60); // 1 hour
+
+//         // Check if slot is already booked
+//         const dateEntry = slot.dates.find(
+//           (entry) => entry.date.toDateString() === selectedDate.toDateString()
+//         );
+//         const isBooked = dateEntry && dateEntry.status === "booked";
+
+//         if (isBooked) return false;
+
+//         if (isToday) {
+//           const timeLeftInMs = slotEndTime - now;
+//           const elapsedTimeMs = now - slotStartTime;
+
+//           // Slot is valid if:
+//           // - It's currently running and at least 1 hour is left
+//           // - It hasn't started yet
+//           return (
+//             (slotStartTime <= now && timeLeftInMs >= minBookingTimeMs) || slotStartTime > now
+//           );
+//         }
+
+//         // For future dates, slot is always valid
+//         return true;
+//       });
+
+//       availableSlotsByTheater.push({
+//         theaterId: theater._id,
+//         name: theater.name,
+//         location: theater.location,
+//         capacity: theater.capacity,
+//         amenities: theater.amenities,
+//         price: theater.price,
+//         minimumDecorationAmount: theater.minimumDecorationAmount,
+//         images: theater.images,
+//         availableSlots,
+//       });
+//     }
+
+//     res.status(200).json({
+//       status: true,
+//       data: availableSlotsByTheater,
+//       message: "Available slots filtered by location and date",
+//     });
+//   } catch (error) {
+//     console.error("Error:", error.message);
+//     next(new AppErr("Error fetching available slots", 500, error.message));
+//   }
+// };
+
+
+const getAllTheaters = async (req, res, next) => {
   try {
-    const { date, location } = req.body;
+    const { date } = req.query;
 
     const selectedDate = new Date(date);
     if (isNaN(selectedDate.getTime())) {
       return next(new AppErr("Invalid date format", 400));
     }
 
-    const theaters = await Theater.find({ location });
+    const theaters = await Theater.find();
     if (theaters.length === 0) {
-      return next(new AppErr("No theaters found in the specified location", 404));
+      return next(new AppErr("No theaters found", 404));
     }
 
     const availableSlotsByTheater = [];
@@ -516,20 +596,29 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
 
       const availableSlots = theater.slots.filter((slot) => {
         // Parse start and end times of the slot
-        const slotStartTime = new Date(`${selectedDate.toDateString()} ${slot.startTime}`);
-        const slotEndTime = new Date(`${selectedDate.toDateString()} ${slot.endTime}`);
+        const slotStartTime = new Date(
+          `${selectedDate.toDateString()} ${slot.startTime}`
+        );
+
+        let slotEndTime = new Date(
+          `${selectedDate.toDateString()} ${slot.endTime}`
+        );
+
+        // Handle cross-midnight slots
+        if (slotEndTime < slotStartTime) {
+          slotEndTime.setDate(slotEndTime.getDate() + 1);
+        }
 
         // Calculate slot duration and minimum required remaining time
         const slotDurationInMs = slotEndTime - slotStartTime;
-        const slotDurationInHours = slotDurationInMs / (1000 * 60 * 60);
         const minBookingTimeMs = 1 * (1000 * 60 * 60); // 1 hour
 
-        // Check if slot is already booked
+        // Check if the slot is already booked
         const dateEntry = slot.dates.find(
-          (entry) => entry.date.toDateString() === selectedDate.toDateString()
+          (entry) => 
+            new Date(entry.date).toDateString() === selectedDate.toDateString()
         );
         const isBooked = dateEntry && dateEntry.status === "booked";
-
         if (isBooked) return false;
 
         if (isToday) {
@@ -564,6 +653,98 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
     res.status(200).json({
       status: true,
       data: availableSlotsByTheater,
+      message: "Available slots filtered by date",
+    });
+  } catch (error) {
+    console.error("Error:", error.message);
+    next(new AppErr("Error fetching theaters and available slots", 500, error.message));
+  }
+};
+
+
+
+const getAvailableSlotsByLocation = async (req, res, next) => {
+  try {
+    const { date, location } = req.body;
+
+    // Parse the selected date in IST
+    const selectedDateIST = moment.tz(date, "Asia/Kolkata").startOf("day");
+    if (!selectedDateIST.isValid()) {
+      return next(new AppErr("Invalid date format", 400));
+    }
+
+    const theaters = await Theater.find({ location });
+    if (theaters.length === 0) {
+      return next(new AppErr("No theaters found in the specified location", 404));
+    }
+
+    const availableSlotsByTheater = [];
+    const nowIST = moment.tz("Asia/Kolkata");
+
+    for (const theater of theaters) {
+      const isToday = nowIST.isSame(selectedDateIST, "day");
+
+      const availableSlots = theater.slots.filter((slot) => {
+        // Combine the selected date with slot times
+        const slotStartTime = moment.tz(
+          `${selectedDateIST.format("YYYY-MM-DD")} ${slot.startTime}`,
+          "YYYY-MM-DD hh:mm A",
+          "Asia/Kolkata"
+        );
+
+        let slotEndTime = moment.tz(
+          `${selectedDateIST.format("YYYY-MM-DD")} ${slot.endTime}`,
+          "YYYY-MM-DD hh:mm A",
+          "Asia/Kolkata"
+        );
+
+        // Handle cross-midnight slot: Add 1 day to the end time if it ends after midnight
+        if (slotEndTime.isBefore(slotStartTime)) {
+          slotEndTime.add(1, "day");
+        }
+
+        // Check if the slot is booked
+        const dateEntry = slot.dates.find((entry) =>
+          moment(entry.date).tz("Asia/Kolkata").isSame(selectedDateIST, "day")
+        );
+        const isBooked = dateEntry && dateEntry.status === "booked";
+        if (isBooked) return false;
+
+        // Condition 1: If it's today, exclude past slots
+        if (isToday) {
+          const timeLeftInMs = slotEndTime.diff(nowIST);
+          const elapsedTimeMs = nowIST.diff(slotStartTime);
+
+          // Check if slot has at least 1 hour remaining
+          const minBookingTimeMs = 1 * 60 * 60 * 1000; // 1 hour in ms
+          if (
+            (slotStartTime.isBefore(nowIST) && timeLeftInMs < minBookingTimeMs) || // Running but less than 1 hour left
+            slotEndTime.isBefore(nowIST) // Already ended
+          ) {
+            return false;
+          }
+        }
+
+        // Condition 2: For future dates, slots are always valid
+        return true;
+      });
+
+      availableSlotsByTheater.push({
+        theaterId: theater._id,
+        name: theater.name,
+        location: theater.location,
+        capacity: theater.capacity,
+        amenities: theater.amenities,
+        price: theater.price,
+        minimumDecorationAmount: theater.minimumDecorationAmount,
+        images: theater.images,
+        availableSlots,
+      });
+    }
+
+    res.status(200).json({
+      status: true,
+      data: availableSlotsByTheater,
       message: "Available slots filtered by location and date",
     });
   } catch (error) {
@@ -571,6 +752,9 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
     next(new AppErr("Error fetching available slots", 500, error.message));
   }
 };
+
+
+
 
 
 

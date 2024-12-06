@@ -104,6 +104,10 @@ const bookingSchema = new Schema({
   orderId: {
     type: String,
   },
+  isRead: {
+    type: Boolean,
+    default: false, 
+  },
   createdAt: {
     type: Date,
     default: Date.now,

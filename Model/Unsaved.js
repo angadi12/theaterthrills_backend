@@ -104,6 +104,10 @@ const unsavedBookingSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+  isRead: {
+    type: Boolean,
+    default: false, 
+  },
   updatedAt: {
     type: Date,
     default: Date.now,

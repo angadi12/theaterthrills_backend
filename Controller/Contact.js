@@ -2,6 +2,7 @@ const { validationResult } = require("express-validator");
 const AppErr = require("../Services/AppErr");
 const Contact = require("../Model/Contact");
 const nodemailer = require("nodemailer");
+const { getSocketIO } = require("../Services/Socket");
 
 const createContact = async (req, res, next) => {
   try {
@@ -43,6 +44,13 @@ const createContact = async (req, res, next) => {
       addOns,
       details,
       lastName,
+      isRead:false,
+    });
+
+    const io = getSocketIO();
+    io.emit("Messagecreated", {
+      message: "A new message has been recived!",
+      order: newContact
     });
 
     res.status(201).json({

@@ -6,7 +6,7 @@ let io;
 function initSocket(server) {
   io = socketIO(server, {
     cors: {
-      origin: "https://localhost:3000", // Replace with your frontend URL in production
+      origin: "http://localhost:3000", // Replace with your frontend URL in production
       methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
       credentials: true,
     },
