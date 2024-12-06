@@ -575,6 +575,7 @@ const getAllTheatersByBranchId = async (req, res, next) => {
 
 
 
+
 const getAllTheaters = async (req, res, next) => {
   try {
     const { date } = req.query;
@@ -595,11 +596,11 @@ const getAllTheaters = async (req, res, next) => {
     const availableSlotsByTheater = [];
 
     for (const theater of theaters) {
-      const now = moment.tz("Asia/Kolkata");
-      const isToday = now.isSame(selectedDateIST, "day");
+      const nowIST = moment.tz("Asia/Kolkata");
+      const isToday = nowIST.isSame(selectedDateIST, "day");
 
       const availableSlots = theater.slots.filter((slot) => {
-        // Parse start and end times of the slot
+        // Parse start and end times of the slot in IST
         const slotStartTime = moment.tz(
           `${selectedDateIST.format("YYYY-MM-DD")} ${slot.startTime}`,
           "YYYY-MM-DD hh:mm A",
@@ -617,10 +618,6 @@ const getAllTheaters = async (req, res, next) => {
           slotEndTime.add(1, "day");
         }
 
-        // Calculate slot duration and minimum required remaining time
-        const slotDurationInMs = slotEndTime.diff(slotStartTime);
-        const minBookingTimeMs = 1 * (1000 * 60 * 60); // 1 hour
-
         // Check if the slot is already booked
         const dateEntry = slot.dates.find((entry) =>
           moment(entry.date).isSame(selectedDateIST, "day")
@@ -628,21 +625,22 @@ const getAllTheaters = async (req, res, next) => {
         const isBooked = dateEntry && dateEntry.status === "booked";
         if (isBooked) return false;
 
+        // Check conditions for "today's" slots
         if (isToday) {
-          const timeLeftInMs = slotEndTime.diff(now);
-          const elapsedTimeMs = now.diff(slotStartTime);
+          const timeLeftInMs = slotEndTime.diff(nowIST);
+          const elapsedTimeMs = nowIST.diff(slotStartTime);
 
           // Slot is valid if:
           // - It's currently running and at least 1 hour is left
           // - It hasn't started yet
           return (
-            (slotStartTime.isSameOrBefore(now) &&
-              timeLeftInMs >= minBookingTimeMs) ||
-            slotStartTime.isAfter(now)
+            (slotStartTime.isSameOrBefore(nowIST) &&
+              timeLeftInMs >= 1 * 60 * 60 * 1000) || // At least 1 hour left
+            slotStartTime.isAfter(nowIST)
           );
         }
 
-        // For future dates, slot is always valid
+        // For future dates, slot is valid by default
         return true;
       });
 
@@ -669,6 +667,7 @@ const getAllTheaters = async (req, res, next) => {
     next(new AppErr("Error fetching theaters and available slots", 500, error.message));
   }
 };
+
 
 
 
