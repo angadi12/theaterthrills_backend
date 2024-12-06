@@ -17,6 +17,7 @@ const {UnsavedBookingRouter}=require("./Route/Unsaved")
 const {AdminRouter}=require("./Route/Admin")
 const {Paymentrouter}=require("./Route/Payment")
 const {expenseRouter}=require("./Route/Expenses")
+const {CouponRouter}=require("./Route/Coupon")
 const BranchRouter =require("./Route/Branch")
  DbConnection();
 
@@ -56,6 +57,7 @@ app.use("/api/v1/Branch", BranchRouter );
 app.use("/api/v1/Admin", AdminRouter );
 app.use("/api/v1/Payments", Paymentrouter );
 app.use("/api/v1/Expenses", expenseRouter );
+app.use("/api/v1/Coupon", CouponRouter );
 
 
 

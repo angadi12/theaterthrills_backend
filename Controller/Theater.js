@@ -616,9 +616,13 @@ const getAllTheaters = async (req, res, next) => {
         }
 
         // Check if the slot is booked
+        // const dateEntry = slot.dates.find((entry) =>
+        //   moment(entry.date).tz("Asia/Kolkata").isSame(selectedDateIST, "day")
+        // );
         const dateEntry = slot.dates.find((entry) =>
-          moment(entry.date).tz("Asia/Kolkata").isSame(selectedDateIST, "day")
+          moment(entry.date).utcOffset("+05:30").isSame(selectedDateIST, "day")
         );
+
         const isBooked = dateEntry && dateEntry.status === "booked";
         if (isBooked) return false;
 
@@ -709,9 +713,19 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
         }
 
         // Check if the slot is booked
+        // const dateEntry = slot.dates.find((entry) =>
+        //   moment(entry.date).tz("Asia/Kolkata").isSame(selectedDateIST, "day")
+        // );
         const dateEntry = slot.dates.find((entry) =>
-          moment(entry.date).tz("Asia/Kolkata").isSame(selectedDateIST, "day")
+          moment(entry.date).utcOffset("+05:30").isSame(selectedDateIST, "day")
         );
+        
+        if (dateEntry) {
+          console.log("Matched Entry:", dateEntry);
+        } else {
+          console.log("No Match for Date:", selectedDateIST.format("YYYY-MM-DD"));
+        }        
+
         const isBooked = dateEntry && dateEntry.status === "booked";
         if (isBooked) return false;
 
@@ -762,79 +776,6 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
 
 
 
-
-
-cron.schedule('0 */3 * * *', async () => {
-  try {
-    const now = new Date();
-    const currentDateString = now.toDateString();
-
-    const theaters = await Theater.find();
-
-    for (const theater of theaters) {
-      let updated = false;
-
-      theater.slots.forEach(slot => {
-        slot.dates.forEach(dateEntry => {
-          const entryDate = new Date(dateEntry.date).toDateString();
-          const slotEndTime = new Date(`${entryDate} ${slot.endTime}`);
-
-          // If the date is today and end time has passed, update status
-          if (entryDate === currentDateString && slotEndTime <= now && dateEntry.status === 'booked') {
-            dateEntry.status = 'available';
-            updated = true;
-          }
-        });
-      });
-
-      if (updated) {
-        await theater.save();
-      }
-    }
-
-    console.log('Slot statuses updated based on current time.');
-  } catch (error) {
-    console.error('Error updating slot statuses:', error);
-  }
-});
-
-// Reset slot statuses and clean up past dates at midnight
-cron.schedule('0 0 * * *', async () => {
-  try {
-    const now = new Date();
-    const theaters = await Theater.find();
-
-    for (const theater of theaters) {
-      let updated = false;
-
-      theater.slots.forEach(slot => {
-        // Reset future dates to 'available' and remove past dates
-        slot.dates = slot.dates.filter(dateEntry => {
-          const entryDate = new Date(dateEntry.date);
-
-          if (entryDate < now.setHours(0, 0, 0, 0)) {
-            return false; // Remove past dates
-          }
-
-          if (entryDate >= now && dateEntry.status !== 'available') {
-            dateEntry.status = 'available'; // Reset future dates to 'available'
-            updated = true;
-          }
-
-          return true;
-        });
-      });
-
-      if (updated) {
-        await theater.save();
-      }
-    }
-
-    console.log('Slots reset to available for the new day, past dates removed.');
-  } catch (error) {
-    console.error('Error resetting and cleaning up slots:', error);
-  }
-});
 
 
 

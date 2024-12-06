@@ -1,10 +1,11 @@
-const { validationResult } = require('express-validator');
-const Coupon = require('../Model/Coupon'); // Assuming a Mongoose model
-const AppErr = require('../utils/AppErr'); // Custom error handling utility
+const { validationResult } = require("express-validator");
+const CouponOffer = require("../Model/Coupon"); // Assuming a Mongoose model
+const AppErr = require("../Services/AppErr"); // Custom error handling utility
 
 // Create a new coupon
-const Createcoupon = async (req, res, next) => {
+const CreateCouponOffer = async (req, res, next) => {
   try {
+    // Validate incoming request data
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -14,17 +15,25 @@ const Createcoupon = async (req, res, next) => {
       });
     }
 
+    // Destructure the request body to get the necessary fields
     const {
       code,
-      discountValue,
+      type,
+      description,
+      discountAmount,
       discountType,
-      minOrderValue,
-      expiryDate,
-      maxUses,
-      applicableItems,
+      validFrom,
+      validUntil,
+      isActive,
+      theater,
+      users,
+      usageLimit,
+      devicesUsed,
+      userLimit,
     } = req.body;
 
-    const existingCoupon = await Coupon.findOne({ code });
+    // Check if the coupon/offer already exists
+    const existingCoupon = await CouponOffer.findOne({ code });
     if (existingCoupon) {
       return res.status(400).json({
         status: false,
@@ -32,24 +41,35 @@ const Createcoupon = async (req, res, next) => {
       });
     }
 
-    const newCoupon = await Coupon.create({
+    // Create a new coupon offer
+    const newCouponOffer = await CouponOffer.create({
       code,
-      discountValue,
-      discountType,
-      minOrderValue,
-      expiryDate,
-      maxUses,
-      applicableItems,
+      type,
+      description,
+      discount: {
+        amount: discountAmount,
+        type: discountType,
+      },
+      validFrom,
+      validUntil,
+      isActive,
+      theater,
+      users,
+      usageLimit,
+      devicesUsed,
+      userLimit,
     });
 
+    // Return success response
     res.status(201).json({
       status: "success",
       data: {
-        coupon: newCoupon,
+        couponOffer: newCouponOffer,
       },
     });
   } catch (err) {
-    next(new AppErr("Failed to create coupon", 500, err.message));
+    // Handle errors
+    next(new AppErr("Failed to create coupon offer", 500, err.message));
   }
 };
 
@@ -80,7 +100,7 @@ const GetCouponById = async (req, res, next) => {
 // Get all coupons
 const GetAllCoupons = async (req, res, next) => {
   try {
-    const coupons = await Coupon.find();
+    const coupons = await CouponOffer.find();
     res.status(200).json({
       status: "success",
       data: {
@@ -107,7 +127,7 @@ const UpdateCoupon = async (req, res, next) => {
     const { id } = req.params;
     const updates = req.body;
 
-    const updatedCoupon = await Coupon.findByIdAndUpdate(id, updates, {
+    const updatedCoupon = await CouponOffer.findByIdAndUpdate(id, updates, {
       new: true,
       runValidators: true,
     });
@@ -134,7 +154,7 @@ const UpdateCoupon = async (req, res, next) => {
 const DeleteCoupon = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const deletedCoupon = await Coupon.findByIdAndDelete(id);
+    const deletedCoupon = await CouponOffer.findByIdAndDelete(id);
 
     if (!deletedCoupon) {
       return res.status(404).json({
@@ -153,8 +173,446 @@ const DeleteCoupon = async (req, res, next) => {
 };
 
 // Apply a coupon
+// const ApplyCoupon = async (req, res, next) => {
+//   try {
+//     // Validate incoming request data
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Validation errors",
+//         errors: errors.array(),
+//       });
+//     }
+
+//     const { couponCode, orderValue, userId, deviceId, theaterId } = req.body;
+
+//     // First, check if it's a coupon offer
+//     let couponOffer = await CouponOffer.findOne({ code: couponCode });
+
+//     if (couponOffer && couponOffer.type === "offer") {
+//       // Validate if the offer is active
+//       if (!couponOffer.isActive) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "This offer is not active",
+//         });
+//       }
+
+//       // Check if the user is eligible for this offer
+//       if (!couponOffer.users.includes(userId)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "User is not eligible for this offer",
+//         });
+//       }
+
+//       // Check if the device has already used the offer
+//       if (couponOffer.devicesUsed.includes(deviceId)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "This device has already used the offer",
+//         });
+//       }
+
+//       // Check usage limit for the offer
+//       if (couponOffer.usageLimit <= 0) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "Usage limit exceeded for this offer",
+//         });
+//       }
+
+//       // If all checks are passed, reduce usage limit and mark device as used
+//       couponOffer.usageLimit -= 1;
+//       couponOffer.devicesUsed.push(deviceId);
+//       await couponOffer.save();
+
+//       // Calculate the discount
+//       const discountAmount = couponOffer.discount.type === "percentage" 
+//         ? (orderValue * couponOffer.discount.amount) / 100 
+//         : couponOffer.discount.amount;
+
+//       return res.status(200).json({
+//         status: "success",
+//         data: {
+//           coupon: couponOffer,
+//           discountPercentage: couponOffer.discount.type === "percentage" ? couponOffer.discount.amount : 0,
+//           discountAmount,
+//         },
+//       });
+//     }
+
+//     // If it's not an offer, check if it's a theater-specific coupon
+//     let coupon = await CouponOffer.findOne({ code: couponCode });
+
+//     if (!coupon) {
+//       return res.status(404).json({
+//         status: false,
+//         message: "Invalid coupon code",
+//       });
+//     }
+
+//     // Check if the coupon is associated with the specific theater
+//     if (coupon.theater.toString() !== theaterId) {
+//       return res.status(400).json({
+//         status: false,
+//         message: `Coupon is not valid for this theater`,
+//       });
+//     }
+
+//     // Check if the coupon has expired
+//     if (new Date() > coupon.expiryDate) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Coupon has expired",
+//       });
+//     }
+
+//     // Check if the order value meets the minimum order requirement
+//     if (orderValue < coupon.minOrderValue) {
+//       return res.status(400).json({
+//         status: false,
+//         message: `Order value must be at least ${coupon.minOrderValue} to apply this coupon`,
+//       });
+//     }
+
+//     // Calculate the discount for the coupon
+//     let discountAmount = 0;
+//     if (coupon.discountType === "percentage") {
+//       discountAmount = (orderValue * coupon.discountValue) / 100;
+//     } else if (coupon.discountType === "fixed") {
+//       discountAmount = coupon.discountValue;
+//     }
+
+//     return res.status(200).json({
+//       status: "success",
+//       data: {
+//         coupon,
+//         discountPercentage: coupon.discountType === "percentage" ? coupon.discountValue : 0,
+//         discountAmount,
+//       },
+//     });
+//   } catch (err) {
+//     console.log(err)
+//     next(new AppErr("Failed to apply coupon", 500, err.message));
+//   }
+// };
+
+
+
+// const ApplyCoupon = async (req, res, next) => {
+//   try {
+//     // Validate incoming request data
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Validation errors",
+//         errors: errors.array(),
+//       });
+//     }
+
+//     const { couponCode, orderValue, userId, deviceId, theaterId } = req.body;
+
+//     // Fetch the coupon or offer from the database
+//     const coupon = await CouponOffer.findOne({ code: couponCode });
+
+//     if (!coupon) {
+//       return res.status(404).json({
+//         status: false,
+//         message: "Invalid coupon code",
+//       });
+//     }
+
+//     // Handle offer type
+//     if (coupon.type === "offer") {
+//       // Check if the offer is expired
+//       if (new Date() > new Date(coupon.validUntil)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "Offer has expired",
+//         });
+//       }
+
+//       // Validate order value against minimum order value
+//       if (orderValue < coupon.minOrderValue) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `Order value must be at least ${coupon.minOrderValue} to apply this offer`,
+//         });
+//       }
+
+//       // Calculate the discount based on offer type
+//       let discountAmount = 0;
+//       if (coupon.discount.type === "percentage") {
+//         discountAmount = (orderValue * coupon.discount.amount) / 100;
+//       } else if (coupon.discount.type === "fixed") {
+//         discountAmount = coupon.discount.amount;
+//       }
+
+//       return res.status(200).json({
+//         status: "success",
+//         data: {
+//           coupon,
+//           discountPercentage: coupon.discount.type === "percentage" ? coupon.discount.amount : 0,
+//           discountAmount,
+//         },
+//       });
+//     }
+
+//     // Handle coupon type
+//     if (coupon.type === "coupon") {
+//       // Check if the coupon is valid for the given theater
+//       if (coupon.theater.toString() !== theaterId) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "Coupon is not valid for this theater",
+//         });
+//       }
+
+//       // Check if the coupon is active
+//       if (!coupon.isActive) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "This coupon is no longer active",
+//         });
+//       }
+
+//       // // Check if the coupon is expired
+//       // const currentDate = new Date();
+//       // const validUntilDate = new Date(coupon.validUntil);
+
+//       // // Ignore time part and compare only the dates
+//       // if (currentDate.setHours(0, 0, 0, 0) > validUntilDate.setHours(0, 0, 0, 0)) {
+//       //   return res.status(400).json({
+//       //     status: false,
+//       //     message: "Coupon has expired",
+//       //   });
+//       // }
+
+//       // Check if the coupon is valid for this user
+//       // if (!coupon.users.includes(userId)) {
+//       //   return res.status(400).json({
+//       //     status: false,
+//       //     message: "This coupon is not valid for your user",
+//       //   });
+//       // }
+
+//       // Check if the user has exceeded their usage limit
+//       const userUsageCount = await CouponOffer.countDocuments({
+//         code: couponCode,
+//         userId,
+//       });
+
+//       if (userUsageCount >= coupon.userLimit) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `You have exceeded the usage limit for this coupon (${coupon.userLimit} times)`,
+//         });
+//       }
+
+//       // Check if the device has already used this coupon
+//       if (coupon.devicesUsed.includes(deviceId)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "This device has already used the coupon",
+//         });
+//       }
+
+//       // Validate the order value against the minimum required order value
+//       if (orderValue < coupon.minOrderValue) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `Order value must be at least ${coupon.minOrderValue} to apply this coupon`,
+//         });
+//       }
+
+//       // Update coupon usage for the device and user
+//       coupon.devicesUsed.push(deviceId);
+//       await coupon.save();
+
+//       // Calculate the discount
+//       let discountAmount = 0;
+//       if (coupon.discount.type === "percentage") {
+//         discountAmount = (orderValue * coupon.discount.amount) / 100;
+//       } else if (coupon.discount.type === "fixed") {
+//         discountAmount = coupon.discount.amount;
+//       }
+
+//       return res.status(200).json({
+//         status: "success",
+//         data: {
+//           coupon,
+//           discountPercentage: coupon.discount.type === "percentage" ? coupon.discount.amount : 0,
+//           discountAmount,
+//         },
+//       });
+//     }
+
+//   } catch (err) {
+//     next(new AppErr("Failed to apply coupon", 500, err.message));
+//   }
+// };
+
+
+// const ApplyCoupon = async (req, res, next) => {
+//   try {
+//     // Validate incoming request data
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty()) {
+//       return res.status(400).json({
+//         status: false,
+//         message: "Validation errors",
+//         errors: errors.array(),
+//       });
+//     }
+
+//     const { couponCode, orderValue, userId, deviceId, theaterId } = req.body;
+
+//     // Fetch the coupon or offer from the database
+//     const coupon = await CouponOffer.findOne({ code: couponCode });
+
+//     if (!coupon) {
+//       return res.status(404).json({
+//         status: false,
+//         message: "Invalid coupon code",
+//       });
+//     }
+
+//     // Handle offer type
+//     if (coupon.type === "offer") {
+//       // Check if the offer is expired
+//       if (new Date() > new Date(coupon.validUntil)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "Offer has expired",
+//         });
+//       }
+
+//       // Validate order value against minimum order value
+//       if (orderValue < coupon.minOrderValue) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `Order value must be at least ${coupon.minOrderValue} to apply this offer`,
+//         });
+//       }
+
+//       // Calculate the discount based on offer type
+//       let discountAmount = 0;
+//       if (coupon.discount.type === "percentage") {
+//         discountAmount = (orderValue * coupon.discount.amount) / 100;
+//       } else if (coupon.discount.type === "fixed") {
+//         discountAmount = coupon.discount.amount;
+//       }
+
+//       return res.status(200).json({
+//         status: "success",
+//         data: {
+//           coupon,
+//           discountPercentage: coupon.discount.type === "percentage" ? coupon.discount.amount : 0,
+//           discountAmount,
+//         },
+//       });
+//     }
+
+//     // Handle coupon type
+//     if (coupon.type === "coupon") {
+//       // Check if the coupon is valid for the given theater
+//       if (coupon.theater.toString() !== theaterId) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "Coupon is not valid for this theater",
+//         });
+//       }
+
+//       // Check if the coupon is active
+//       if (!coupon.isActive) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "This coupon is no longer active",
+//         });
+//       }
+
+//       // Check if the coupon is expired
+//       const currentDate = new Date();
+//       const validUntilDate = new Date(coupon.validUntil);
+
+//       // Compare only the dates, ignoring time
+//       if (currentDate.setHours(0, 0, 0, 0) > validUntilDate.setHours(0, 0, 0, 0)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "Coupon has expired",
+//         });
+//       }
+
+//       // Check if the coupon is valid for this user
+//       // if (!coupon.users.includes(userId)) {
+//       //   return res.status(400).json({
+//       //     status: false,
+//       //     message: "This coupon is not valid for your user",
+//       //   });
+//       // }
+
+//       // Check if the user has exceeded their usage limit
+//       const userUsageCount = await CouponOffer.countDocuments({
+//         code: couponCode,
+//         userId,
+//       });
+
+//       if (userUsageCount >= coupon.userLimit) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `You have exceeded the usage limit for this coupon (${coupon.userLimit} times)`,
+//         });
+//       }
+
+//       // Check if the device has already used this coupon
+//       if (coupon.devicesUsed.includes(deviceId)) {
+//         return res.status(400).json({
+//           status: false,
+//           message: "This device has already used the coupon",
+//         });
+//       }
+
+//       // Validate the order value against the minimum required order value
+//       if (orderValue < coupon.minOrderValue) {
+//         return res.status(400).json({
+//           status: false,
+//           message: `Order value must be at least ${coupon.minOrderValue} to apply this coupon`,
+//         });
+//       }
+
+//       // Update coupon usage for the device and user
+//       coupon.devicesUsed.push(deviceId);
+//       await coupon.save();
+
+//       // Calculate the discount
+//       let discountAmount = 0;
+//       if (coupon.discount.type === "percentage") {
+//         discountAmount = (orderValue * coupon.discount.amount) / 100;
+//       } else if (coupon.discount.type === "fixed") {
+//         discountAmount = coupon.discount.amount;
+//       }
+
+//       return res.status(200).json({
+//         status: "success",
+//         data: {
+//           coupon,
+//           discountPercentage: coupon.discount.type === "percentage" ? coupon.discount.amount : 0,
+//           discountAmount,
+//         },
+//       });
+//     }
+
+//   } catch (err) {
+//     next(new AppErr("Failed to apply coupon", 500, err.message));
+//   }
+// };
+
 const ApplyCoupon = async (req, res, next) => {
   try {
+    // Validate incoming request data
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
@@ -164,9 +622,10 @@ const ApplyCoupon = async (req, res, next) => {
       });
     }
 
-    const { code, orderValue } = req.body;
+    const { couponCode, orderValue, userId, deviceId, theaterId } = req.body;
 
-    const coupon = await Coupon.findOne({ code });
+    // Fetch the coupon or offer from the database
+    const coupon = await CouponOffer.findOne({ code: couponCode });
 
     if (!coupon) {
       return res.status(404).json({
@@ -175,64 +634,160 @@ const ApplyCoupon = async (req, res, next) => {
       });
     }
 
-    if (new Date() > coupon.expiryDate) {
-      return res.status(400).json({
-        status: false,
-        message: "Coupon has expired",
+    // Handle offer type
+    if (coupon.type === "offer") {
+      // Check if the offer is expired
+      if (new Date() > new Date(coupon.validUntil)) {
+        return res.status(400).json({
+          status: false,
+          message: "Offer has expired",
+        });
+      }
+
+      // Validate order value against minimum order value
+      if (orderValue < coupon.minOrderValue) {
+        return res.status(400).json({
+          status: false,
+          message: `Order value must be at least ${coupon.minOrderValue} to apply this offer`,
+        });
+      }
+
+      // Calculate the discount based on offer type
+      let discountAmount = 0;
+      if (coupon.discount.type === "percentage") {
+        discountAmount = (orderValue * coupon.discount.amount) / 100;
+      } else if (coupon.discount.type === "fixed") {
+        discountAmount = coupon.discount.amount;
+      }
+
+      return res.status(200).json({
+        status: "success",
+        data: {
+          coupon,
+          discountPercentage: coupon.discount.type === "percentage" ? coupon.discount.amount : 0,
+          discountAmount,
+        },
       });
     }
 
-    if (orderValue < coupon.minOrderValue) {
-      return res.status(400).json({
-        status: false,
-        message: `Order value must be at least ${coupon.minOrderValue} to apply this coupon`,
+    // Handle coupon type
+    if (coupon.type === "coupon") {
+      // Check if the coupon is valid for the given theater
+      if (coupon.theater.toString() !== theaterId) {
+        return res.status(400).json({
+          status: false,
+          message: "Coupon is not valid for this theater",
+        });
+      }
+
+      // Check if the coupon is active
+      if (!coupon.isActive) {
+        return res.status(400).json({
+          status: false,
+          message: "This coupon is no longer active",
+        });
+      }
+
+      // Check if the coupon is expired
+      const currentDate = new Date();
+      const validUntilDate = new Date(coupon.validUntil);
+
+      // Ignore time part and compare only the dates
+      if (currentDate.setHours(0, 0, 0, 0) > validUntilDate.setHours(0, 0, 0, 0)) {
+        return res.status(400).json({
+          status: false,
+          message: "Coupon has expired",
+        });
+      }
+
+      // const eligibleUser = coupon.users.find((user) => user === userId);
+      // console.log(eligibleUser)
+      // if (!eligibleUser) {
+      //   return res.status(400).json({
+      //     status: false,
+      //     message: `Coupon is not valid for user with ID: ${userId}`,
+      //   });
+      // }
+
+      // Check if the user has exceeded their usage limit
+      const userUsageCount = await CouponOffer.countDocuments({
+        code: couponCode,
+        userId,
+      });
+
+      if (userUsageCount >= coupon.userLimit) {
+        return res.status(400).json({
+          status: false,
+          message: `You have exceeded the usage limit for this coupon (${coupon.userLimit} times)`,
+        });
+      }
+
+      // Check if the device has already used this coupon
+      if (coupon.devicesUsed.includes(deviceId)) {
+        return res.status(400).json({
+          status: false,
+          message: "This device has already used the coupon",
+        });
+      }
+      if (coupon.users.includes(userId)) {
+        return res.status(400).json({
+          status: false,
+          message: "This user has already used the coupon",
+        });
+      }
+
+      // Validate the order value against the minimum required order value
+      if (orderValue < coupon.minOrderValue) {
+        return res.status(400).json({
+          status: false,
+          message: `Order value must be at least ${coupon.minOrderValue} to apply this coupon`,
+        });
+      }
+
+      // Update coupon usage for the device and user
+      coupon.devicesUsed.push(deviceId);
+      coupon.users.push(userId);
+      await coupon.save();
+
+      // Decrease the usage limit
+      coupon.usageLimit -= 1;
+
+      if (coupon.usageLimit <= 0) {
+        coupon.isActive = false; // Optionally deactivate the coupon once the usage limit is reached
+      }
+
+      await coupon.save();
+
+      // Calculate the discount
+      let discountAmount = 0;
+      if (coupon.discount.type === "percentage") {
+        discountAmount = (orderValue * coupon.discount.amount) / 100;
+      } else if (coupon.discount.type === "fixed") {
+        discountAmount = coupon.discount.amount;
+      }
+
+      return res.status(200).json({
+        status: "success",
+        data: {
+          coupon,
+          discountPercentage: coupon.discount.type === "percentage" ? coupon.discount.amount : 0,
+          discountAmount,
+        },
       });
     }
 
-    res.status(200).json({
-      status: "success",
-      data: {
-        coupon,
-        discount: coupon.discountValue,
-      },
-    });
   } catch (err) {
     next(new AppErr("Failed to apply coupon", 500, err.message));
   }
 };
 
-// Validate a coupon by code
-const ValidateCoupon = async (req, res, next) => {
-  try {
-    const { code } = req.params;
 
-    const coupon = await Coupon.findOne({ code });
-
-    if (!coupon) {
-      return res.status(404).json({
-        status: false,
-        message: "Invalid coupon code",
-      });
-    }
-
-    res.status(200).json({
-      status: "success",
-      data: {
-        valid: true,
-        coupon,
-      },
-    });
-  } catch (err) {
-    next(new AppErr("Failed to validate coupon", 500, err.message));
-  }
-};
 
 module.exports = {
-  Createcoupon,
+  CreateCouponOffer,
   GetCouponById,
   GetAllCoupons,
   UpdateCoupon,
   DeleteCoupon,
   ApplyCoupon,
-  ValidateCoupon,
 };

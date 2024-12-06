@@ -1,68 +1,55 @@
 const express = require('express');
 const { body, param } = require('express-validator');
 const {
-  Createcoupon,
+  CreateCouponOffer,
   GetCouponById,
   GetAllCoupons,
   UpdateCoupon,
   DeleteCoupon,
   ApplyCoupon,
-  ValidateCoupon
-} = require('../Controller/Coupon');
+} = require('../Controller/Coupon'); // Using the same controller for both Coupon and CouponOffer
 
-const Couponrouter = express.Router();
+const CouponRouter = express.Router();
 
-// Validators
 const couponValidationRules = [
-  body('code').isString().withMessage('Coupon code must be a string').notEmpty().withMessage('Coupon code is required'),
-  body('discountValue')
-    .isNumeric()
-    .withMessage('Discount value must be a number')
-    .notEmpty()
-    .withMessage('Discount value is required'),
-  body('discountType')
-    .isIn(['flat', 'percentage'])
-    .withMessage('Discount type must be either "flat" or "percentage"'),
-  body('minOrderValue')
-    .optional()
-    .isNumeric()
-    .withMessage('Minimum order value must be a number'),
-  body('expiryDate')
-    .isISO8601()
-    .toDate()
-    .withMessage('Expiry date must be a valid date in ISO8601 format'),
-  body('maxUses')
-    .isInt({ min: 1 })
-    .withMessage('Maximum uses must be an integer greater than 0'),
-  body('applicableItems')
-    .optional()
-    .isArray()
-    .withMessage('Applicable items must be an array of item IDs')
+  body('code')
+    .isString().withMessage('Coupon code must be a string')
+    .notEmpty().withMessage('Coupon code is required'),
+  body('validFrom')
+    .isISO8601().toDate().withMessage('Valid from must be a valid date in ISO8601 format'),
+  body('validUntil')
+    .isISO8601().toDate().withMessage('Valid until must be a valid date in ISO8601 format'),
+  body('usageLimit')
+    .isInt({ min: 1 }).withMessage('Usage limit must be an integer greater than 0'),
+  body('theater')
+    .optional().isMongoId().withMessage('Theater ID must be a valid MongoDB Object ID'),
+  body('user')
+    .optional().isMongoId().withMessage('User ID must be a valid MongoDB Object ID'),
+  body('deviceId')
+    .optional().isString().withMessage('Device ID must be a string'),
+  body('maxLimit')
+    .optional().isInt({ min: 1 }).withMessage('Max limit must be a positive integer'),
 ];
 
-// Create Coupon
-Couponrouter.post(
-  '/Createcoupon',
+CouponRouter.post(
+  '/CreateCoupon',
   couponValidationRules,
-  Createcoupon
+  CreateCouponOffer
 );
 
-// Get Coupon by ID
-Couponrouter.get(
-  '/Getcouponbyid/:id',
+CouponRouter.get(
+  '/GetCouponById/:id',
   param('id').isMongoId().withMessage('Invalid coupon ID'),
   GetCouponById
 );
 
-// Get All Coupons
-Couponrouter.get(
-  '/Getallcoupon',
+CouponRouter.get(
+  '/GetAllCoupons',
   GetAllCoupons
 );
 
-// Update Coupon by ID
-Couponrouter.put(
-  'Updatecoupon/:id',
+CouponRouter.put(
+  '/UpdateCoupon/:id',
   [
     param('id').isMongoId().withMessage('Invalid coupon ID'),
     ...couponValidationRules
@@ -70,32 +57,28 @@ Couponrouter.put(
   UpdateCoupon
 );
 
-// Delete Coupon by ID
-Couponrouter.delete(
-  'Deletecoupon/:id',
+CouponRouter.delete(
+  '/DeleteCoupon/:id',
   param('id').isMongoId().withMessage('Invalid coupon ID'),
   DeleteCoupon
 );
 
-// Apply Coupon
-Couponrouter.post(
-  '/apply',
+// Apply Coupon or Coupon Offer
+CouponRouter.post(
+  '/ApplyCoupon',
   [
-    body('code').isString().withMessage('Coupon code must be a string').notEmpty().withMessage('Coupon code is required'),
-    body('orderValue')
-      .isNumeric()
-      .withMessage('Order value must be a number')
-      .notEmpty()
-      .withMessage('Order value is required')
+    body('couponCode').isString().withMessage('Coupon code must be a string').notEmpty().withMessage('Coupon code is required'),
+    body('userId').isMongoId().withMessage('User ID must be a valid MongoDB Object ID').notEmpty().withMessage('User ID is required'),
+    body('deviceId').isString().withMessage('Device ID must be a string').notEmpty().withMessage('Device ID is required')
   ],
   ApplyCoupon
 );
 
-// Validate Coupon by Code
-Couponrouter.get(
-  '/validate/:code',
-  param('code').isString().withMessage('Invalid coupon code format'),
-  ValidateCoupon
-);
+// Validate Coupon or Coupon Offer by Code
+// CouponRouter.get(
+//   '/ValidateCoupon/:code',
+//   param('code').isString().withMessage('Invalid coupon code format'),
+//   ValidateCoupon
+// );
 
-module.exports = { Couponrouter };
+module.exports = { CouponRouter };
