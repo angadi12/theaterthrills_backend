@@ -574,12 +574,16 @@ const getAllTheatersByBranchId = async (req, res, next) => {
 // };
 
 
+
 const getAllTheaters = async (req, res, next) => {
   try {
     const { date } = req.query;
 
-    const selectedDate = new Date(date);
-    if (isNaN(selectedDate.getTime())) {
+    // Convert the provided date to IST and set it to the start of the day
+    const selectedDateIST = moment.tz(date, "Asia/Kolkata").startOf("day");
+
+    // Validate the converted date
+    if (!selectedDateIST.isValid()) {
       return next(new AppErr("Invalid date format", 400));
     }
 
@@ -591,45 +595,50 @@ const getAllTheaters = async (req, res, next) => {
     const availableSlotsByTheater = [];
 
     for (const theater of theaters) {
-      const now = new Date();
-      const isToday = now.toDateString() === selectedDate.toDateString();
+      const now = moment.tz("Asia/Kolkata");
+      const isToday = now.isSame(selectedDateIST, "day");
 
       const availableSlots = theater.slots.filter((slot) => {
         // Parse start and end times of the slot
-        const slotStartTime = new Date(
-          `${selectedDate.toDateString()} ${slot.startTime}`
+        const slotStartTime = moment.tz(
+          `${selectedDateIST.format("YYYY-MM-DD")} ${slot.startTime}`,
+          "YYYY-MM-DD hh:mm A",
+          "Asia/Kolkata"
         );
 
-        let slotEndTime = new Date(
-          `${selectedDate.toDateString()} ${slot.endTime}`
+        let slotEndTime = moment.tz(
+          `${selectedDateIST.format("YYYY-MM-DD")} ${slot.endTime}`,
+          "YYYY-MM-DD hh:mm A",
+          "Asia/Kolkata"
         );
 
         // Handle cross-midnight slots
-        if (slotEndTime < slotStartTime) {
-          slotEndTime.setDate(slotEndTime.getDate() + 1);
+        if (slotEndTime.isBefore(slotStartTime)) {
+          slotEndTime.add(1, "day");
         }
 
         // Calculate slot duration and minimum required remaining time
-        const slotDurationInMs = slotEndTime - slotStartTime;
+        const slotDurationInMs = slotEndTime.diff(slotStartTime);
         const minBookingTimeMs = 1 * (1000 * 60 * 60); // 1 hour
 
         // Check if the slot is already booked
-        const dateEntry = slot.dates.find(
-          (entry) => 
-            new Date(entry.date).toDateString() === selectedDate.toDateString()
+        const dateEntry = slot.dates.find((entry) =>
+          moment(entry.date).isSame(selectedDateIST, "day")
         );
         const isBooked = dateEntry && dateEntry.status === "booked";
         if (isBooked) return false;
 
         if (isToday) {
-          const timeLeftInMs = slotEndTime - now;
-          const elapsedTimeMs = now - slotStartTime;
+          const timeLeftInMs = slotEndTime.diff(now);
+          const elapsedTimeMs = now.diff(slotStartTime);
 
           // Slot is valid if:
           // - It's currently running and at least 1 hour is left
           // - It hasn't started yet
           return (
-            (slotStartTime <= now && timeLeftInMs >= minBookingTimeMs) || slotStartTime > now
+            (slotStartTime.isSameOrBefore(now) &&
+              timeLeftInMs >= minBookingTimeMs) ||
+            slotStartTime.isAfter(now)
           );
         }
 
