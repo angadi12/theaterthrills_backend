@@ -1,11 +1,11 @@
 // controllers/theaterController.js
-const mongoose = require('mongoose'); // Ensure mongoose is imported
-const Theater= require('../Model/Theater');
+const mongoose = require("mongoose"); // Ensure mongoose is imported
+const Theater = require("../Model/Theater");
 // const moment = require('moment');
 const AppErr = require("../Services/AppErr");
-const Booking = require('../Model/Booking'); // Adjust the path to your model
+const Booking = require("../Model/Booking"); // Adjust the path to your model
 const { validationResult } = require("express-validator");
-const cron = require('node-cron');
+const cron = require("node-cron");
 const moment = require("moment-timezone");
 
 // Create a new theater
@@ -35,6 +35,7 @@ const moment = require("moment-timezone");
 //   }
 // };
 const createTheater = async (req, res, next) => {
+  console.log(req.body);
   try {
     // Check for validation errors
     const errors = validationResult(req);
@@ -42,19 +43,39 @@ const createTheater = async (req, res, next) => {
       return next(new AppErr("Validation failed", 400, errors.array()));
     }
 
-    const {status,branch, name, location, maxCapacity, amenities, slots, price, minimumDecorationAmount, images,groupSize,extraPerPerson } = req.body;
+    const {
+      status,
+      branch,
+      name,
+      location,
+      maxCapacity,
+      amenities,
+      slots,
+      price,
+      minimumDecorationAmount,
+      images,
+      groupSize,
+      extraPerPerson,
+    } = req.body;
 
     // Validate slots structure
-    if (!Array.isArray(slots) || slots.some(slot => !slot.startTime || !slot.endTime)) {
-      return next(new AppErr("Each slot must have a startTime and endTime", 400));
+    if (
+      !Array.isArray(slots) ||
+      slots.some((slot) => !slot.startTime || !slot.endTime)
+    ) {
+      return next(
+        new AppErr("Each slot must have a startTime and endTime", 400)
+      );
     }
 
     // Initialize slots with empty dates
-    const initializedSlots = slots.map(slot => ({
+    const initializedSlots = slots.map((slot) => ({
       startTime: slot.startTime,
       endTime: slot.endTime,
       dates: [], // Initialize dates as an empty array
     }));
+
+    const imageUrls = req.files.map((file) => file.path);
 
     // Create and save the theater
     const theater = new Theater({
@@ -65,7 +86,7 @@ const createTheater = async (req, res, next) => {
       groupSize,
       amenities,
       slots: initializedSlots,
-      images,
+      images: imageUrls,
       price,
       branch,
       status,
@@ -74,15 +95,15 @@ const createTheater = async (req, res, next) => {
 
     await theater.save();
 
-    res.status(201).json({ status: true, message: "Theater created successfully", theater });
+    res
+      .status(201)
+      .json({ status: true, message: "Theater created successfully", theater });
   } catch (error) {
     console.error(error);
+    console.log(error);
     next(new AppErr("Error creating theater", 500, error.message));
   }
 };
-
-
-
 
 // Get a theater by ID
 const getTheaterById = async (req, res, next) => {
@@ -91,18 +112,18 @@ const getTheaterById = async (req, res, next) => {
 
     // Check if the provided ID is valid
     if (!mongoose.Types.ObjectId.isValid(id)) {
-      return next(new AppErr('Invalid theater ID', 400));
+      return next(new AppErr("Invalid theater ID", 400));
     }
 
     const theater = await Theater.findById(id);
     if (!theater) {
-      return next(new AppErr('Theater not found', 404));
+      return next(new AppErr("Theater not found", 404));
     }
 
     res.status(200).json(theater);
   } catch (error) {
-    console.log(error)
-    next(new AppErr('Error fetching theater', 500));
+    console.log(error);
+    next(new AppErr("Error fetching theater", 500));
   }
 };
 
@@ -135,27 +156,33 @@ const getAvailableSlots = async (req, res, next) => {
     const bookedSlots = await Booking.find({
       theater: theaterId,
       date: selectedDate,
-      status: "booked"
+      status: "booked",
     }).select("slot");
 
     console.log("Booked Slots:", bookedSlots);
 
-    const bookedSlotIds = new Set(bookedSlots.map(booking => booking.slot.toString()));
+    const bookedSlotIds = new Set(
+      bookedSlots.map((booking) => booking.slot.toString())
+    );
 
     // Get current date for comparison
     const now = new Date();
     const isToday = now.toDateString() === selectedDate.toDateString();
 
     // Filter available slots
-    const availableSlots = theater.slots.filter(slot => {
+    const availableSlots = theater.slots.filter((slot) => {
       const slotId = slot._id.toString();
       if (bookedSlotIds.has(slotId)) return false;
 
       if (isToday) {
-        const [slotHours, slotMinutes, slotPeriod] = slot.startTime.match(/(\d+):(\d+)\s?(AM|PM)/i).slice(1);
+        const [slotHours, slotMinutes, slotPeriod] = slot.startTime
+          .match(/(\d+):(\d+)\s?(AM|PM)/i)
+          .slice(1);
         const slotDate = new Date(now);
         slotDate.setHours(
-          slotPeriod.toUpperCase() === "PM" && slotHours !== "12" ? +slotHours + 12 : +slotHours % 12,
+          slotPeriod.toUpperCase() === "PM" && slotHours !== "12"
+            ? +slotHours + 12
+            : +slotHours % 12,
           +slotMinutes
         );
         return slotDate > now;
@@ -171,11 +198,7 @@ const getAvailableSlots = async (req, res, next) => {
   }
 };
 
-
-
-
 // Create a new booking for a slot
-
 
 const updateTheater = async (req, res, next) => {
   try {
@@ -184,13 +207,13 @@ const updateTheater = async (req, res, next) => {
 
     // Validate theater ID
     if (!mongoose.Types.ObjectId.isValid(theaterId)) {
-      return next(new AppErr('Invalid theater ID', 400));
+      return next(new AppErr("Invalid theater ID", 400));
     }
 
     // Check if the theater exists
     const theater = await Theater.findById(theaterId);
     if (!theater) {
-      return next(new AppErr('Theater not found', 404));
+      return next(new AppErr("Theater not found", 404));
     }
 
     // Validate and update theater fields if they are provided
@@ -203,19 +226,20 @@ const updateTheater = async (req, res, next) => {
     if (slots && Array.isArray(slots)) {
       for (const slot of slots) {
         if (!slot.startTime || !slot.endTime) {
-          return next(new AppErr('Each slot must have a startTime and endTime', 400));
+          return next(
+            new AppErr("Each slot must have a startTime and endTime", 400)
+          );
         }
       }
       theater.slots = slots; // Updating the slots with the new array
     }
 
     await theater.save();
-    res.status(200).json({ message: 'Theater updated successfully', theater });
+    res.status(200).json({ message: "Theater updated successfully", theater });
   } catch (error) {
-    next(new AppErr('Error updating theater', 500));
+    next(new AppErr("Error updating theater", 500));
   }
 };
-
 
 const deleteTheater = async (req, res, next) => {
   try {
@@ -223,23 +247,23 @@ const deleteTheater = async (req, res, next) => {
 
     // Validate theater ID
     if (!mongoose.Types.ObjectId.isValid(theaterId)) {
-      return next(new AppErr('Invalid theater ID', 400));
+      return next(new AppErr("Invalid theater ID", 400));
     }
 
     // Check if the theater exists
     const theater = await Theater.findById(theaterId);
     if (!theater) {
-      return next(new AppErr('Theater not found', 404));
+      return next(new AppErr("Theater not found", 404));
     }
 
     await Theater.findByIdAndDelete(theaterId);
-    res.status(200).json({ message: 'Theater deleted successfully' });
+    res
+      .status(200)
+      .json({ status: "success", message: "Theater deleted successfully" });
   } catch (error) {
-    next(new AppErr('Error deleting theater', 500));
+    next(new AppErr("Error deleting theater", 500));
   }
 };
-
-
 
 const getAllTheaterLocations = async (req, res, next) => {
   try {
@@ -260,8 +284,6 @@ const getAllTheaterLocations = async (req, res, next) => {
     next(new AppErr("Error fetching theater locations", 500, error.message));
   }
 };
-
-
 
 // const getAllTheatersByBranchId = async (req, res, next) => {
 //   try {
@@ -296,7 +318,9 @@ const getAllTheatersByBranchId = async (req, res, next) => {
       return next(new AppErr("Invalid branch ID", 400));
     }
 
-    const theaters = await Theater.find({ branch: branchId }).populate("branch");
+    const theaters = await Theater.find({ branch: branchId }).populate(
+      "branch"
+    );
 
     if (!theaters) {
       return next(new AppErr("Query failed to execute", 500));
@@ -319,8 +343,6 @@ const getAllTheatersByBranchId = async (req, res, next) => {
     next(new AppErr("Error fetching theaters", 500, error));
   }
 };
-
-
 
 // const getAllTheaters = async (req, res, next) => {
 //   try {
@@ -399,9 +421,6 @@ const getAllTheatersByBranchId = async (req, res, next) => {
 //     next(new AppErr("Error fetching theaters and available slots", 500, error.message));
 //   }
 // };
-
-
-
 
 // const getAvailableSlotsByLocation = async (req, res, next) => {
 //   try {
@@ -482,18 +501,7 @@ const getAllTheatersByBranchId = async (req, res, next) => {
 //   }
 // };
 
-
-
-
-
-
-
-
-
-
 // Update slot statuses every 3 hours
-
-
 
 // const getAvailableSlotsByLocation = async (req, res, next) => {
 //   try {
@@ -573,9 +581,6 @@ const getAllTheatersByBranchId = async (req, res, next) => {
 //   }
 // };
 
-
-
-
 const getAllTheaters = async (req, res, next) => {
   try {
     const { date } = req.query;
@@ -634,7 +639,8 @@ const getAllTheaters = async (req, res, next) => {
           // Check if slot has at least 1 hour remaining
           const minBookingTimeMs = 1 * 60 * 60 * 1000; // 1 hour in ms
           if (
-            (slotStartTime.isBefore(nowIST) && timeLeftInMs < minBookingTimeMs) || // Running but less than 1 hour left
+            (slotStartTime.isBefore(nowIST) &&
+              timeLeftInMs < minBookingTimeMs) || // Running but less than 1 hour left
             slotEndTime.isBefore(nowIST) // Already ended
           ) {
             return false;
@@ -665,12 +671,15 @@ const getAllTheaters = async (req, res, next) => {
     });
   } catch (error) {
     console.error("Error:", error.message);
-    next(new AppErr("Error fetching theaters and available slots", 500, error.message));
+    next(
+      new AppErr(
+        "Error fetching theaters and available slots",
+        500,
+        error.message
+      )
+    );
   }
 };
-
-
-
 
 const getAvailableSlotsByLocation = async (req, res, next) => {
   try {
@@ -684,7 +693,9 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
 
     const theaters = await Theater.find({ location });
     if (theaters.length === 0) {
-      return next(new AppErr("No theaters found in the specified location", 404));
+      return next(
+        new AppErr("No theaters found in the specified location", 404)
+      );
     }
 
     const availableSlotsByTheater = [];
@@ -719,12 +730,15 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
         const dateEntry = slot.dates.find((entry) =>
           moment(entry.date).utcOffset("+05:30").isSame(selectedDateIST, "day")
         );
-        
+
         if (dateEntry) {
           console.log("Matched Entry:", dateEntry);
         } else {
-          console.log("No Match for Date:", selectedDateIST.format("YYYY-MM-DD"));
-        }        
+          console.log(
+            "No Match for Date:",
+            selectedDateIST.format("YYYY-MM-DD")
+          );
+        }
 
         const isBooked = dateEntry && dateEntry.status === "booked";
         if (isBooked) return false;
@@ -737,7 +751,8 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
           // Check if slot has at least 1 hour remaining
           const minBookingTimeMs = 1 * 60 * 60 * 1000; // 1 hour in ms
           if (
-            (slotStartTime.isBefore(nowIST) && timeLeftInMs < minBookingTimeMs) || // Running but less than 1 hour left
+            (slotStartTime.isBefore(nowIST) &&
+              timeLeftInMs < minBookingTimeMs) || // Running but less than 1 hour left
             slotEndTime.isBefore(nowIST) // Already ended
           ) {
             return false;
@@ -772,21 +787,16 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
   }
 };
 
-
-
-
-
-
-
-
 const getTheaterAnalytics = async (req, res) => {
   try {
-    const {  year } = req.query;
-    const {  theaterId } = req.params;
+    const { year } = req.query;
+    const { theaterId } = req.params;
 
     // Validate inputs
     if (!theaterId || !year) {
-      return res.status(400).json({ message: "Theater ID and year are required." });
+      return res
+        .status(400)
+        .json({ message: "Theater ID and year are required." });
     }
 
     // Find the theater
@@ -861,10 +871,6 @@ const getTheaterAnalytics = async (req, res) => {
   }
 };
 
-
-
-
-
 module.exports = {
   createTheater,
   getTheaterById,
@@ -875,6 +881,5 @@ module.exports = {
   getAvailableSlotsByLocation,
   getAllTheaterLocations,
   getAllTheatersByBranchId,
-  getTheaterAnalytics
-  };
-  
+  getTheaterAnalytics,
+};

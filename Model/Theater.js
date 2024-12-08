@@ -27,6 +27,7 @@ const theaterSchema = new Schema({
   minimumDecorationAmount: { type: Number, required: true },
   extraPerPerson: { type: Number, required: true },
   images: [{ type: String }],
+  Locationlink: { type: String },
   branch: {
     type: Schema.Types.ObjectId,
     ref: "Branch",

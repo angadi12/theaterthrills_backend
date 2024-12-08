@@ -5,6 +5,7 @@ const AppErr = require("../Services/AppErr");
 const Booking = require('../Model/Booking'); // Adjust the path to your model
 const Theater= require('../Model/Theater');
 const User = require("../Model/User");
+const moment = require("moment-timezone");
 
 // Create a new branch
 const CreateBranch = async (req, res, next) => {
@@ -382,6 +383,111 @@ const getBranchAnalytics = async (req, res) => {
 //   }
 // };
 
+
+
+
+// const Getbranchsummary = async (req, res) => {
+//   try {
+//     const { branchId } = req.params;
+
+//     if (!branchId) {
+//       return res.status(400).json({
+//         success: false,
+//         message: "Branch ID is required",
+//       });
+//     }
+
+//     // Calculate IST date ranges
+//     const currentDateIST = new Date();
+//     currentDateIST.setHours(currentDateIST.getHours() + 5);
+//     currentDateIST.setMinutes(currentDateIST.getMinutes() + 30);
+    
+//     const startOfDayIST = new Date(currentDateIST.setHours(0, 0, 0, 0));
+//     const endOfDayIST = new Date(startOfDayIST.getTime() + 86399999); // End of day
+    
+//     const bookingSummary = await Booking.aggregate([
+//       {
+//         $match: {
+//           theater: { $exists: true },
+//         },
+//       },
+//       {
+//         $lookup: {
+//           from: "theaters", // Join Theater collection
+//           localField: "theater",
+//           foreignField: "_id",
+//           as: "theaterDetails",
+//         },
+//       },
+//       {
+//         $unwind: "$theaterDetails",
+//       },
+//       {
+//         $lookup: {
+//           from: "branches", // Join Branch collection to get branch details
+//           localField: "theaterDetails.branch",
+//           foreignField: "_id",
+//           as: "branchDetails",
+//         },
+//       },
+//       {
+//         $unwind: "$branchDetails",
+//       },
+//       {
+//         $match: {
+//           "branchDetails._id": new mongoose.Types.ObjectId(branchId), // Filter by branch ID
+//         },
+//       },
+//       {
+//         $addFields: {
+//           isActive: {
+//             $and: [
+//               { $gte: ["$date", startOfDayIST] },
+//               { $lte: ["$date", endOfDayIST] },
+//             ],
+//           },
+//           isUpcoming: {
+//             $gt: ["$date", endOfDayIST],
+//           },
+//           isCompleted: {
+//             $lt: ["$date", startOfDayIST],
+//           },
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: "$branchDetails._id", // Group by branch ID
+//           branchName: { $first: "$branchDetails.name" }, // Use branch name from Branch collection
+//           activeBookings: { $sum: { $cond: ["$isActive", 1, 0] } },
+//           upcomingBookings: { $sum: { $cond: ["$isUpcoming", 1, 0] } },
+//           completedBookings: { $sum: { $cond: ["$isCompleted", 1, 0] } },
+//         },
+//       },
+//       {
+//         $project: {
+//           _id: 0,
+//           branchName: 1,
+//           activeBookings: 1,
+//           upcomingBookings: 1,
+//           completedBookings: 1,
+//         },
+//       },
+//     ]);
+
+//     res.status(200).json({
+//       success: true,
+//       data: bookingSummary,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching booking summary:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "An error occurred while fetching the booking summary",
+//     });
+//   }
+// };
+
+
 const Getbranchsummary = async (req, res) => {
   try {
     const { branchId } = req.params;
@@ -393,14 +499,13 @@ const Getbranchsummary = async (req, res) => {
       });
     }
 
-    // Calculate IST date ranges
-    const currentDateIST = new Date();
-    currentDateIST.setHours(currentDateIST.getHours() + 5);
-    currentDateIST.setMinutes(currentDateIST.getMinutes() + 30);
-    
-    const startOfDayIST = new Date(currentDateIST.setHours(0, 0, 0, 0));
-    const endOfDayIST = new Date(startOfDayIST.getTime() + 86399999); // End of day
-    
+    // Get current IST date and time
+    const currentDateIST = moment().tz("Asia/Kolkata");
+
+    // Calculate the start and end of the day in IST
+    const startOfDayIST = currentDateIST.clone().startOf("day").toDate(); // Start of the day in IST
+    const endOfDayIST = currentDateIST.clone().endOf("day").toDate(); // End of the day in IST
+
     const bookingSummary = await Booking.aggregate([
       {
         $match: {
@@ -482,9 +587,6 @@ const Getbranchsummary = async (req, res) => {
     });
   }
 };
-
-
-
 
 
 

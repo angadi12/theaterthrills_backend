@@ -21,8 +21,6 @@ const couponValidationRules = [
     .isISO8601().toDate().withMessage('Valid until must be a valid date in ISO8601 format'),
   body('usageLimit')
     .isInt({ min: 1 }).withMessage('Usage limit must be an integer greater than 0'),
-  body('theater')
-    .optional().isMongoId().withMessage('Theater ID must be a valid MongoDB Object ID'),
   body('user')
     .optional().isMongoId().withMessage('User ID must be a valid MongoDB Object ID'),
   body('deviceId')
@@ -68,8 +66,6 @@ CouponRouter.post(
   '/ApplyCoupon',
   [
     body('couponCode').isString().withMessage('Coupon code must be a string').notEmpty().withMessage('Coupon code is required'),
-    body('userId').isMongoId().withMessage('User ID must be a valid MongoDB Object ID').notEmpty().withMessage('User ID is required'),
-    body('deviceId').isString().withMessage('Device ID must be a string').notEmpty().withMessage('Device ID is required')
   ],
   ApplyCoupon
 );

@@ -6,6 +6,7 @@ const { validationResult } = require("express-validator");
 const crypto = require("crypto");
 const razorpayInstance = require("../Services/Razorpayinstance");
 const nodemailer = require("nodemailer");
+const CouponOffer = require("../Model/Coupon"); // Assuming a Mongoose model
 
 // const createBooking = async (req, res, next) => {
 //   try {
@@ -172,7 +173,10 @@ const createBooking = async (req, res, next) => {
       addOns,
       paymentAmount,
       TotalAmount,
-      orderId
+      orderId,
+      couponCode,
+      deviceId,
+      discountAmount
     } = req.body;
 
     if (
@@ -205,6 +209,26 @@ const createBooking = async (req, res, next) => {
       );
     }
 
+
+
+    if (couponCode) {
+      const coupon = await CouponOffer.findOne({ code: couponCode });
+
+     
+      if (coupon.type === "coupon" || coupon.type==="offer") {     
+        coupon.devicesUsed.push(deviceId);
+        coupon.users.push(user);
+        coupon.usageLimit -= 1;
+
+        if (coupon.usageLimit <= 0) {
+          coupon.isActive = false; 
+        }
+
+        await coupon.save();
+      }
+    }
+
+
     // Create booking with pending payment status
     const booking = new Booking({
       user,
@@ -228,7 +252,9 @@ const createBooking = async (req, res, next) => {
       TotalAmount,
       orderId,
       paymentStatus: "completed",
-      bookingId: `BK-${Date.now()}`, // Unique Booking ID
+      bookingId: `BK-${Date.now()}`, 
+      coupon: couponCode ,
+      discountAmount: discountAmount || 0, 
     });
 
     await booking.save();

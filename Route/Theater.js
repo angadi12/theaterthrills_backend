@@ -1,6 +1,7 @@
 const express = require("express");
 const { body, param } = require("express-validator");
 const { isAdmin, isSuperAdmin } = require("../MiddleWare/IsUser");
+const upload =require("../Services/multer")
 
 const {
   createTheater,
@@ -15,11 +16,13 @@ const {
   getTheaterAnalytics
 } = require("../Controller/Theater");
 
+
 const TheaterRouter = express.Router();
 
 // Route to create a new theater
 TheaterRouter.post(
   "/theater/create",
+  upload.array("images", 6),
 //   isAdmin,
   [
     body("name").notEmpty().withMessage("Theater name is required"),
@@ -58,9 +61,9 @@ TheaterRouter.put(
 
 // Route to delete a theater by ID
 TheaterRouter.delete(
-  "/theater/delete/:id",
+  "/theater/delete/:theaterId",
 //   isSuperAdmin,
-  param("id").isMongoId().withMessage("Invalid theater ID"),
+  param("theaterId").isMongoId().withMessage("Invalid theater ID"),
   deleteTheater
 );
 

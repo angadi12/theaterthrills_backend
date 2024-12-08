@@ -25,15 +25,12 @@ const bookingSchema = new Schema({
   },
   numberOfPeople: {
     type: String,
-   
   },
   phoneNumber: {
     type: String,
-   
   },
   whatsappNumber: {
     type: String,
-   
   },
   email: {
     type: String,
@@ -72,7 +69,7 @@ const bookingSchema = new Schema({
   addOns: {
     decorations: {
       type: Map,
-      of: Number, 
+      of: Number,
     },
     roses: {
       type: Map,
@@ -100,14 +97,21 @@ const bookingSchema = new Schema({
     required: [true, "Payment amount is required"],
     min: [0, "Payment amount cannot be negative"],
   },
+  discountAmount: {
+    type: Number,
+  },
 
   orderId: {
     type: String,
   },
+  coupon: {
+    type: String,
+  },
   isRead: {
     type: Boolean,
-    default: false, 
+    default: false,
   },
+
   createdAt: {
     type: Date,
     default: Date.now,

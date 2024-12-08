@@ -622,7 +622,7 @@ const ApplyCoupon = async (req, res, next) => {
       });
     }
 
-    const { couponCode, orderValue, userId, deviceId, theaterId } = req.body;
+    const { couponCode, orderValue, theaterId ,userId,deviceId} = req.body;
 
     // Fetch the coupon or offer from the database
     const coupon = await CouponOffer.findOne({ code: couponCode });
@@ -745,16 +745,16 @@ const ApplyCoupon = async (req, res, next) => {
       }
 
       // Update coupon usage for the device and user
-      coupon.devicesUsed.push(deviceId);
-      coupon.users.push(userId);
-      await coupon.save();
+      // coupon.devicesUsed.push(deviceId);
+      // coupon.users.push(userId);
+      // await coupon.save();
 
       // Decrease the usage limit
-      coupon.usageLimit -= 1;
+      // coupon.usageLimit -= 1;
 
-      if (coupon.usageLimit <= 0) {
-        coupon.isActive = false; // Optionally deactivate the coupon once the usage limit is reached
-      }
+      // if (coupon.usageLimit <= 0) {
+      //   coupon.isActive = false; // Optionally deactivate the coupon once the usage limit is reached
+      // }
 
       await coupon.save();
 
@@ -777,6 +777,7 @@ const ApplyCoupon = async (req, res, next) => {
     }
 
   } catch (err) {
+    console.log(err)
     next(new AppErr("Failed to apply coupon", 500, err.message));
   }
 };
