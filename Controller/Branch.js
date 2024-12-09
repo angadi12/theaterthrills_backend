@@ -557,7 +557,7 @@ const Getbranchsummary = async (req, res) => {
       },
       {
         $group: {
-          _id: "$branchDetails._id", // Group by branch ID
+          _id: "$branchDetails._id", 
           branchName: { $first: "$branchDetails.name" }, // Use branch name from Branch collection
           activeBookings: { $sum: { $cond: ["$isActive", 1, 0] } },
           upcomingBookings: { $sum: { $cond: ["$isUpcoming", 1, 0] } },
