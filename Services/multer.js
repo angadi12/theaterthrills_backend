@@ -1,10 +1,17 @@
+const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
+
+// Ensure the uploads directory exists
+const uploadDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 // Configure multer storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // Local directory for temporary storage
+    cb(null, uploadDir); // Local directory for temporary storage
   },
   filename: (req, file, cb) => {
     cb(null, `${Date.now()}-${file.originalname}`);
@@ -14,24 +21,3 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 module.exports = upload;
-
-
-
-
-
-
-// // config/multer.js
-// const multer = require('multer');
-// const { CloudinaryStorage } = require('multer-storage-cloudinary');
-// const cloudinary = require('./cloudinary');
-// const storage = new CloudinaryStorage({
-//   cloudinary: cloudinary,
-//   params: {
-//     folder: 'THE-THEATRETHRILLS', 
-//     allowed_formats: ['jpg', 'jpeg', 'png'],
-//   },
-// });
-
-// const upload = multer({ storage: storage });
-
-// module.exports = upload;
