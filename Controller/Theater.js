@@ -7,6 +7,7 @@ const Booking = require("../Model/Booking"); // Adjust the path to your model
 const { validationResult } = require("express-validator");
 const cron = require("node-cron");
 const moment = require("moment-timezone");
+const uploadFilesToCloudinary = require('../Services/uploadFiles');
 
 // Create a new theater
 // const createTheater = async (req, res, next) => {
@@ -75,7 +76,9 @@ const createTheater = async (req, res, next) => {
       dates: [], // Initialize dates as an empty array
     }));
 
-    const imageUrls = req.files.map((file) => file.path);
+    // const imageUrls = req.files.map((file) => file.path);
+    const imageUrls = await uploadFilesToCloudinary(req.files);
+
 
     // Create and save the theater
     const theater = new Theater({
