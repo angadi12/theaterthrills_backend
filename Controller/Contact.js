@@ -55,7 +55,7 @@ const createContact = async (req, res, next) => {
 
     res.status(201).json({
       status: "success",
-      data: { contact: newContact },
+      data: { contact: newContact }
     });
   } catch (err) {
     console.log(err);
