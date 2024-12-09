@@ -77,8 +77,11 @@ const createTheater = async (req, res, next) => {
     }));
 
     // const imageUrls = req.files.map((file) => file.path);
-    const imageUrls = await uploadFilesToCloudinary(req.files);
-
+    // const imageUrls = await uploadFilesToCloudinary(req.files);
+    const imageUrls = req.files.map(file => {
+      // Replace this with cloud upload logic if needed
+      return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    });
 
     // Create and save the theater
     const theater = new Theater({
