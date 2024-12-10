@@ -80,7 +80,7 @@ TheaterRouter.get(
 
 TheaterRouter.post('/availableSlotsByLocation', getAvailableSlotsByLocation);
 
-TheaterRouter.get('/theater/locations',getAllTheaterLocations);
+TheaterRouter.get('/theater/locations/:branchId',getAllTheaterLocations);
 
 TheaterRouter.get("/theater/branch/:branchId", getAllTheatersByBranchId);
 

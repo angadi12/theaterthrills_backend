@@ -10,19 +10,19 @@ const {
   Getbranchsummary,
   getBranchdetails
 } = require("../Controller/Branch");
+const upload =require("../Services/multer")
 
 const BranchRouter = express.Router();
 
 BranchRouter.post(
   "/create/branch",
+  upload.array("images", 3),
   body("Branchname").notEmpty().withMessage("Branch Name  is required"),
-  body("code").notEmpty().withMessage("Branch Code  is required"),
   CreateBranch
 );
 BranchRouter.put(
   "/update/branch/:id",
   body("Branchname").notEmpty().withMessage("Branch Name  is required"),
-  body("code").notEmpty().withMessage("Branch Code  is required"),
   UpdateBranch
 );
 BranchRouter.get("/get/branch", GetAllBranch);

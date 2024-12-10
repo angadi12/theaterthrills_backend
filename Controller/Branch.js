@@ -2,8 +2,8 @@ const mongoose = require("mongoose");
 const Branch = require("../Model/Branch");
 const { validationResult } = require("express-validator");
 const AppErr = require("../Services/AppErr");
-const Booking = require('../Model/Booking'); // Adjust the path to your model
-const Theater= require('../Model/Theater');
+const Booking = require("../Model/Booking"); // Adjust the path to your model
+const Theater = require("../Model/Theater");
 const User = require("../Model/User");
 const moment = require("moment-timezone");
 
@@ -16,20 +16,27 @@ const CreateBranch = async (req, res, next) => {
       return next(new AppErr("Validation failed", 400, errors.array()));
     }
 
-    const { Branchname, code, location, Number } = req.body;
+    const { Branchname, location, Number, images, Locationlink } =
+      req.body;
 
     // Check if branch code already exists
-    const existingBranch = await Branch.findOne({ code });
+    const existingBranch = await Branch.findOne({ Branchname });
     if (existingBranch) {
-      return next(new AppErr("Branch code already exists", 400));
+      return next(new AppErr("Branch name already exists", 400));
     }
+
+    const imageUrls = req.files.map(file => {
+      // Replace this with cloud upload logic if needed
+      return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+    });
 
     // Create a new branch document
     const branch = new Branch({
       Branchname,
-      code,
       location,
       Number,
+      Locationlink,
+      images: imageUrls,
     });
 
     // Save branch to the database
@@ -56,12 +63,12 @@ const UpdateBranch = async (req, res, next) => {
     }
 
     const { id } = req.params;
-    const { Branchname, code, location, Number } = req.body;
+    const { Branchname, Locationlink, location, Number } = req.body;
 
     // Find the branch by ID and update it
     const updatedBranch = await Branch.findByIdAndUpdate(
       id,
-      { Branchname, code, location, Number },
+      { Branchname, Locationlink, location, Number },
       { new: true, runValidators: true }
     );
 
@@ -158,7 +165,6 @@ module.exports = {
   DeleteBranch,
 };
 
-
 const getBranchAnalytics = async (req, res) => {
   try {
     // Fetch all branches with their details
@@ -194,10 +200,6 @@ const getBranchAnalytics = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
-
-
 
 // const Getbranchsummary = async (req, res) => {
 //   try {
@@ -274,7 +276,6 @@ const getBranchAnalytics = async (req, res) => {
 //       },
 //     },
 //   ]);
- 
 
 //   res.status(200).json({
 //     success: true,
@@ -292,10 +293,10 @@ const getBranchAnalytics = async (req, res) => {
 //   try {
 //     const { branchId } = req.params; // Extract branchId from query parameters
 //     const currentDate = new Date(); // Current date
-    
+
 //     // Normalize the current date to midnight to avoid time issues
 //     const startOfDay = new Date(currentDate.setHours(0, 0, 0, 0)); // Normalize current date to 00:00:00
-//     const endOfDay = new Date(startOfDay); 
+//     const endOfDay = new Date(startOfDay);
 //     endOfDay.setHours(23, 59, 59, 999); // End of day (23:59:59.999)
 
 //     // Validate branchId
@@ -383,9 +384,6 @@ const getBranchAnalytics = async (req, res) => {
 //   }
 // };
 
-
-
-
 // const Getbranchsummary = async (req, res) => {
 //   try {
 //     const { branchId } = req.params;
@@ -401,10 +399,10 @@ const getBranchAnalytics = async (req, res) => {
 //     const currentDateIST = new Date();
 //     currentDateIST.setHours(currentDateIST.getHours() + 5);
 //     currentDateIST.setMinutes(currentDateIST.getMinutes() + 30);
-    
+
 //     const startOfDayIST = new Date(currentDateIST.setHours(0, 0, 0, 0));
 //     const endOfDayIST = new Date(startOfDayIST.getTime() + 86399999); // End of day
-    
+
 //     const bookingSummary = await Booking.aggregate([
 //       {
 //         $match: {
@@ -487,7 +485,6 @@ const getBranchAnalytics = async (req, res) => {
 //   }
 // };
 
-
 const Getbranchsummary = async (req, res) => {
   try {
     const { branchId } = req.params;
@@ -557,7 +554,7 @@ const Getbranchsummary = async (req, res) => {
       },
       {
         $group: {
-          _id: "$branchDetails._id", 
+          _id: "$branchDetails._id",
           branchName: { $first: "$branchDetails.name" }, // Use branch name from Branch collection
           activeBookings: { $sum: { $cond: ["$isActive", 1, 0] } },
           upcomingBookings: { $sum: { $cond: ["$isUpcoming", 1, 0] } },
@@ -587,9 +584,6 @@ const Getbranchsummary = async (req, res) => {
     });
   }
 };
-
-
-
 
 const getBranchdetails = async (req, res) => {
   try {
@@ -628,8 +622,10 @@ const getBranchdetails = async (req, res) => {
     ]);
 
     // Prepare the response
-    const adminCount = adminCountResult.length > 0 ? adminCountResult[0].adminCount : 0;
-    const theaterCount = theaterCountResult.length > 0 ? theaterCountResult[0].theaterCount : 0;
+    const adminCount =
+      adminCountResult.length > 0 ? adminCountResult[0].adminCount : 0;
+    const theaterCount =
+      theaterCountResult.length > 0 ? theaterCountResult[0].theaterCount : 0;
 
     res.status(200).json({
       success: true,
@@ -648,9 +644,6 @@ const getBranchdetails = async (req, res) => {
   }
 };
 
-
-
-
 module.exports = {
   CreateBranch,
   UpdateBranch,
@@ -659,5 +652,5 @@ module.exports = {
   DeleteBranch,
   getBranchAnalytics,
   Getbranchsummary,
-  getBranchdetails
+  getBranchdetails,
 };

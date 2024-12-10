@@ -271,25 +271,63 @@ const deleteTheater = async (req, res, next) => {
   }
 };
 
+
 const getAllTheaterLocations = async (req, res, next) => {
   try {
-    // Fetch distinct locations from theaters
-    const locations = await Theater.distinct("location");
+    const { branchId } = req.params;
 
-    if (locations.length === 0) {
-      return next(new AppErr("No locations found", 404));
+    if (!branchId) {
+      return next(new AppErr("Branch ID is required", 400));
     }
+
+    // Fetch all theaters for the specified branch and include location and branch details
+    const theaters = await Theater.find({ branch: branchId })
+      .populate("branch", "Branchname location code Number") // Populate branch details
+      .select("location"); // Include only the location field from Theater
+
+    if (!theaters || theaters.length === 0) {
+      return next(new AppErr("No theater locations found for this branch", 404));
+    }
+
+    // Extract distinct locations and include the branch details
+    const locations = [...new Set(theaters.map((theater) => theater.location))];
 
     res.status(200).json({
       status: true,
-      data: locations,
-      message: "Theater locations fetched successfully",
+      data: {
+        branch: theaters[0].branch, // Branch details (same for all theaters in this branch)
+        locations, // Distinct theater locations
+      },
+      message: `Theater locations for branch ${branchId} fetched successfully`,
     });
   } catch (error) {
     console.error("Error:", error.message);
-    next(new AppErr("Error fetching theater locations", 500, error.message));
+    next(new AppErr("Error fetching theaters by branch", 500, error.message));
   }
 };
+
+
+
+
+// const getAllTheaterLocations = async (req, res, next) => {
+//   try {
+//     // Fetch distinct locations from theaters
+//     const locations = await Theater.distinct("location").populate("branch")
+
+//     if (locations.length === 0) {
+//       return next(new AppErr("No locations found", 404));
+//     }
+
+//     res.status(200).json({
+//       status: true,
+//       data: locations,
+//       message: "Theater locations fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error:", error.message);
+//     next(new AppErr("Error fetching theater locations", 500, error.message));
+//   }
+// };
 
 // const getAllTheatersByBranchId = async (req, res, next) => {
 //   try {

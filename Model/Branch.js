@@ -7,17 +7,14 @@ const BranchSchema = new mongoose.Schema(
       required: true,
       unique: true,
     },
-    code: {
-      type: String,
-      required: true,
-      unique: true,
-    },
     location: {
       type: String,
     },
     Number: {
       type: Number,
     },
+    images: [{ type: String }],
+    Locationlink: { type: String },
   },
   {
     timestamps: true,
