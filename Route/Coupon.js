@@ -7,6 +7,7 @@ const {
   UpdateCoupon,
   DeleteCoupon,
   ApplyCoupon,
+  GetAllCouponsbyoffer
 } = require('../Controller/Coupon'); // Using the same controller for both Coupon and CouponOffer
 
 const CouponRouter = express.Router();
@@ -44,6 +45,10 @@ CouponRouter.get(
 CouponRouter.get(
   '/GetAllCoupons',
   GetAllCoupons
+);
+CouponRouter.get(
+  '/GetAllCouponsbyoffer',
+  GetAllCouponsbyoffer
 );
 
 CouponRouter.put(

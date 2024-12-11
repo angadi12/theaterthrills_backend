@@ -33,7 +33,6 @@ initSocket(httpServer)
 
 app.use(cors());
 
-app.options('*', cors()); // Allow preflight requests for all routes
 
 //------IN Build Middleware----------/
 app.use(morgan("combined"));

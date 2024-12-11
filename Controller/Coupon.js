@@ -111,6 +111,22 @@ const GetAllCoupons = async (req, res, next) => {
     next(new AppErr("Failed to fetch coupons", 500, err.message));
   }
 };
+const GetAllCouponsbyoffer = async (req, res, next) => {
+  try {
+    const coupons = await CouponOffer.find({ type: "offer" });
+
+    const descriptions = coupons.map(offer => offer.description);
+
+    res.status(200).json({
+      status: "success",
+      descriptions: descriptions, 
+
+    });
+  } catch (err) {
+    console.log(err)
+    next(new AppErr("Failed to fetch coupons", 500, err.message));
+  }
+};
 
 // Update a coupon
 const UpdateCoupon = async (req, res, next) => {
@@ -791,4 +807,5 @@ module.exports = {
   UpdateCoupon,
   DeleteCoupon,
   ApplyCoupon,
+  GetAllCouponsbyoffer
 };

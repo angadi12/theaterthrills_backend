@@ -7,6 +7,7 @@ const crypto = require("crypto");
 const razorpayInstance = require("../Services/Razorpayinstance");
 const nodemailer = require("nodemailer");
 const CouponOffer = require("../Model/Coupon"); // Assuming a Mongoose model
+const moment = require("moment-timezone");
 
 // const createBooking = async (req, res, next) => {
 //   try {
@@ -531,42 +532,140 @@ const getBookingByUserId = async (req, res, next) => {
 };
 
 
+// const getAllBookingByTheaterId = async (req, res) => {
+//   const { theaterId } = req.params;
+
+//   try {
+//     if (!theaterId) {
+//       return res.status(400).json({ message: "Theater ID is required" });
+//     }
+
+//     const bookings = await Booking.find({ theater: theaterId })
+//       .populate("user")
+//       .populate("theater") 
+//       .sort({ date: -1 })
+//       .lean();
+
+//     if (!bookings || bookings.length === 0) {
+//       return res.status(404).json({ success: false, message: "Nobookings" });
+//     }
+
+//     const theater = await Theater.findById(theaterId).select("slots").lean();
+//     if (!theater) {
+//       return res.status(404).json({ message: "Theater not found" });
+//     }
+//     const enrichedBookings = bookings.map(booking => {
+//       const slotDetails = theater.slots.find(slot => slot._id.toString() === booking.slot.toString());
+//       if (!slotDetails) {
+//         console.warn(`Slot not found for booking ID: ${booking._id}`);
+//       }
+//       return {
+//         ...booking,
+//         slotDetails: slotDetails || null, // Add `null` if slot not found
+//       };
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       data: enrichedBookings,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching bookings:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error. Please try again later.",
+//     });
+//   }
+// };
+
+
+
+
+
 const getAllBookingByTheaterId = async (req, res) => {
   const { theaterId } = req.params;
-
+  const { status } = req.query; // Expecting a query parameter for status
   try {
     if (!theaterId) {
       return res.status(400).json({ message: "Theater ID is required" });
     }
 
+    // Fetch all bookings for the theater
     const bookings = await Booking.find({ theater: theaterId })
       .populate("user")
-      .populate("theater") 
+      .populate("theater")
       .sort({ date: -1 })
       .lean();
 
     if (!bookings || bookings.length === 0) {
-      return res.status(404).json({ success: false, message: "Nobookings" });
+      return res.status(404).json({ success: false, message: "No bookings found" });
     }
 
+    // Fetch theater slots for slot details
     const theater = await Theater.findById(theaterId).select("slots").lean();
     if (!theater) {
       return res.status(404).json({ message: "Theater not found" });
     }
-    const enrichedBookings = bookings.map(booking => {
-      const slotDetails = theater.slots.find(slot => slot._id.toString() === booking.slot.toString());
-      if (!slotDetails) {
-        console.warn(`Slot not found for booking ID: ${booking._id}`);
-      }
+
+    // Add slot details to each booking
+    const enrichedBookings = bookings.map((booking) => {
+      const slotDetails = theater.slots.find(
+        (slot) => slot._id.toString() === booking.slot.toString()
+      );
       return {
         ...booking,
         slotDetails: slotDetails || null, // Add `null` if slot not found
       };
     });
 
+    // Convert UTC date to IST in 'yyyy-mm-dd' format
+    const convertToISTDateString = (utcDate) => {
+      return moment(utcDate).tz("Asia/Kolkata").format("YYYY-MM-DD");
+    };
+
+    const todayIST = convertToISTDateString(new Date());
+
+    // Count bookings by status
+    const counts = {
+      active: 0,
+      upcoming: 0,
+      completed: 0,
+      all: enrichedBookings.length,
+    };
+
+    enrichedBookings.forEach((booking) => {
+      const bookingDateIST = convertToISTDateString(booking.date);
+      if (booking.paymentStatus === "completed") {
+        if (bookingDateIST === todayIST) {
+          counts.active += 1;
+        } else if (bookingDateIST > todayIST) {
+          counts.upcoming += 1;
+        } else if (bookingDateIST < todayIST) {
+          counts.completed += 1;
+        }
+      }
+    });
+
+    // Filter bookings based on the status query
+    const filteredBookings = enrichedBookings.filter((booking) => {
+      const bookingDateIST = convertToISTDateString(booking.date);
+      if (status === "Active") {
+        return bookingDateIST === todayIST ;
+      } else if (status === "upcoming") {
+        return bookingDateIST > todayIST ;
+      } else if (status === "completed") {
+        return bookingDateIST < todayIST ;
+      } else if (status === "AllBooking") {
+        return true; // Return all bookings
+      } else {
+        return false; // Invalid or unsupported status
+      }
+    });
+
     res.status(200).json({
       success: true,
-      data: enrichedBookings,
+      data: filteredBookings,
+      counts, // Include counts for each status
     });
   } catch (error) {
     console.error("Error fetching bookings:", error);
@@ -576,6 +675,8 @@ const getAllBookingByTheaterId = async (req, res) => {
     });
   }
 };
+
+
 
 
 
