@@ -57,6 +57,7 @@ const createTheater = async (req, res, next) => {
       images,
       groupSize,
       extraPerPerson,
+      Locationlink
     } = req.body;
 
     // Validate slots structure
@@ -96,6 +97,7 @@ const createTheater = async (req, res, next) => {
       price,
       branch,
       status,
+      Locationlink,
       minimumDecorationAmount,
     });
 
@@ -207,45 +209,99 @@ const getAvailableSlots = async (req, res, next) => {
 // Create a new booking for a slot
 
 const updateTheater = async (req, res, next) => {
+  console.log(req.body);
   try {
-    const { theaterId } = req.params;
-    const { name, location, capacity, amenities, slots } = req.body;
-
-    // Validate theater ID
-    if (!mongoose.Types.ObjectId.isValid(theaterId)) {
-      return next(new AppErr("Invalid theater ID", 400));
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return next(new AppErr("Validation failed", 400, errors.array()));
     }
 
-    // Check if the theater exists
-    const theater = await Theater.findById(theaterId);
+    const {
+      status,
+      branch,
+      name,
+      location,
+      maxCapacity,
+      amenities,
+      slots,
+      price,
+      minimumDecorationAmount,
+      images,
+      groupSize,
+      Locationlink,
+      extraPerPerson,
+    } = req.body;
+
+    const { theaterId } = req.params; // Get the theater ID from the route parameters
+
+    // Validate slots structure
+    if (
+      !Array.isArray(slots) ||
+      slots.some((slot) => !slot.startTime || !slot.endTime)
+    ) {
+      return next(
+        new AppErr("Each slot must have a startTime and endTime", 400)
+      );
+    }
+
+    // Initialize slots with empty dates
+    const initializedSlots = slots.map((slot) => ({
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      dates: [], // Initialize dates as an empty array
+    }));
+
+    // If new images are uploaded, process them
+    let imageUrls = [];
+    if (req.files && req.files.length > 0) {
+      imageUrls = req.files.map(file => {
+        // Replace this with cloud upload logic if needed
+        return `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+      });
+    }
+
+    // Prepare update data
+    const updateData = {
+      name,
+      location,
+      maxCapacity,
+      extraPerPerson,
+      groupSize,
+      amenities,
+      slots: initializedSlots,
+      images: imageUrls.length > 0 ? imageUrls : undefined,
+      price,
+      branch,
+      status,
+      minimumDecorationAmount,
+    };
+
+    // Filter out undefined values from updateData to avoid overwriting with undefined
+    Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+    // Update the theater document
+    const theater = await Theater.findByIdAndUpdate(
+      theaterId,
+      { $set: updateData }, // $set to update only the specified fields
+      { new: true } // Return the updated document
+    );
+
     if (!theater) {
       return next(new AppErr("Theater not found", 404));
     }
 
-    // Validate and update theater fields if they are provided
-    if (name) theater.name = name;
-    if (location) theater.location = location;
-    if (capacity && capacity > 0) theater.capacity = capacity;
-    if (amenities) theater.amenities = amenities;
-
-    // Validate and update slots if provided
-    if (slots && Array.isArray(slots)) {
-      for (const slot of slots) {
-        if (!slot.startTime || !slot.endTime) {
-          return next(
-            new AppErr("Each slot must have a startTime and endTime", 400)
-          );
-        }
-      }
-      theater.slots = slots; // Updating the slots with the new array
-    }
-
-    await theater.save();
-    res.status(200).json({ message: "Theater updated successfully", theater });
+    res.status(200).json({
+      status: true,
+      message: "Theater updated successfully",
+      theater,
+    });
   } catch (error) {
-    next(new AppErr("Error updating theater", 500));
+    console.error(error);
+    next(new AppErr("Error updating theater", 500, error.message));
   }
 };
+
 
 const deleteTheater = async (req, res, next) => {
   try {

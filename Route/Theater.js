@@ -46,13 +46,13 @@ TheaterRouter.get(
 
 // Route to update a theater by ID
 TheaterRouter.put(
-  "/theater/update/:id",
+  "/theater/update/:theaterId",
+  upload.array("images", 6),
 //   isAdmin,
   [
-    param("id").isMongoId().withMessage("Invalid theater ID"),
     body("name").optional().notEmpty().withMessage("Theater name is required"),
     body("location").optional().notEmpty().withMessage("Location is required"),
-    body("capacity").optional().isInt({ gt: 0 }).withMessage("Capacity must be a positive number"),
+    body("maxCapacity").optional().isInt({ gt: 0 }).withMessage("Capacity must be a positive number"),
     body("amenities").optional().isArray().withMessage("Amenities must be an array of strings"),
     body("slots").optional().isArray().withMessage("Slots must be an array"),
   ],
