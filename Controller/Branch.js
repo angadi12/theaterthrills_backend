@@ -65,7 +65,6 @@ const UpdateBranch = async (req, res, next) => {
     const { id } = req.params;
     const { Branchname, Locationlink, location, Number } = req.body;
 
-    // Find the branch by ID and update it
     const updatedBranch = await Branch.findByIdAndUpdate(
       id,
       { Branchname, Locationlink, location, Number },
