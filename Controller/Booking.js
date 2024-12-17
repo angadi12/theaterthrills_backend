@@ -177,7 +177,8 @@ const createBooking = async (req, res, next) => {
       orderId,
       couponCode,
       deviceId,
-      discountAmount
+      discountAmount,
+      paymentType
     } = req.body;
 
     if (
@@ -256,6 +257,7 @@ const createBooking = async (req, res, next) => {
       bookingId: `BK-${Date.now()}`, 
       coupon: couponCode ,
       discountAmount: discountAmount || 0, 
+      paymentType
     });
 
     await booking.save();

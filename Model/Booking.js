@@ -111,6 +111,12 @@ const bookingSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  paymentType: {
+    type: String,
+    enum: ["full", "advance"],
+    required: true,
+    default: "advance",
+  },
 
   createdAt: {
     type: Date,
