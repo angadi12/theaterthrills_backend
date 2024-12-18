@@ -79,7 +79,6 @@ const jwt = require("jsonwebtoken");
 // };
 
 const createUser = async (req, res, next) => {
-  console.log(req.body);
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -91,6 +90,8 @@ const createUser = async (req, res, next) => {
     }
 
     const { uid, email, phoneNumber, fullName, role, authType, branch } = req.body;
+
+   
 
     // Validate fields based on authType
     if (authType === "firebase" && !phoneNumber) {
@@ -125,6 +126,25 @@ const createUser = async (req, res, next) => {
 
     // Handle existing user
     if (existingUser) {
+
+      if (existingUser.role !== "superadmin" && role && branch && fullName) {
+        existingUser.role = role;
+        existingUser.branch = branch;
+        existingUser.fullName = fullName;
+        await existingUser.save();
+
+      }
+
+      if (phoneNumber) {
+        if (!phoneNumber.startsWith("+91")) {
+          existingUser.phoneNumber = `+91${phoneNumber}`;
+          await existingUser.save();
+        } else {
+          existingUser.phoneNumber = phoneNumber;
+          await existingUser.save();
+        }
+      }
+
       if (existingUser.role === "admin" && !existingUser.uid && uid) {
         // Update UID for admin logging in for the first time
         existingUser.uid = uid;
@@ -174,10 +194,17 @@ const createUser = async (req, res, next) => {
     if (uid) {
       newUserData.uid = uid;
     }
-    if (phoneNumber) {
-      newUserData.phoneNumber = phoneNumber;
-    }
+    // if (phoneNumber) {
+    //   newUserData.phoneNumber = phoneNumber;
+    // }
     
+    if (phoneNumber) {
+      if (!phoneNumber.startsWith("+91")) {
+        newUserData.phoneNumber = `+91${phoneNumber}`;
+      } else {
+        newUserData.phoneNumber = phoneNumber;
+      }
+    }
     // Create the user
     const newUser = new User(newUserData);
     await newUser.save();
