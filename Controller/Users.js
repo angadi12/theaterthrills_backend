@@ -93,7 +93,6 @@ const createUser = async (req, res, next) => {
 
    
 
-    // Validate fields based on authType
     if (authType === "firebase" && !phoneNumber) {
       return res.status(400).json({
         status: false,
