@@ -4,6 +4,7 @@ const OTP = require("../Model/OTP"); // Import OTP model
 const jwt = require("jsonwebtoken");
 const { body, validationResult } = require("express-validator");
 const { text } = require("body-parser");
+const { Console } = require("console");
 
 const verifyOtp = async (req, res, next) => {
   const { email, otp } = req.body;
@@ -169,8 +170,8 @@ const sendOtp = async (email) => {
             <p>If you didn't request this code, please ignore this email or contact our support team.</p>
         </div>
         <div class="footer">
-            <p>© 2023 THEATER-THRILLS. All rights reserved.</p>
-            <p>Contact us: support@THEATER-THRILLS.com | +1 (123) 456-7890</p>
+            <p>© 2024 THEATER-THRILLS. All rights reserved.</p>
+            <p>Contact us: info@thetheatrethrills.com | +91 9398617123</p>
         </div>
     </div>
 </body>
@@ -180,6 +181,7 @@ const sendOtp = async (email) => {
     await transporter.sendMail(mailOptions);
     return { status: true, message: "OTP sent successfully" };
   } catch (error) {
+    console.log(error)
     throw new Error("Failed to send OTP");
   }
 };

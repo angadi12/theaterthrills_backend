@@ -783,8 +783,8 @@ const sendBookingEmail = async (req, res, next) => {
             <a href="https://www.thetheatrethrills.com/bookings" class="button">Manage Your Booking</a>
         </div>
         <div class="footer">
-            <p>&copy; 2024 THE THEATRE THRILLS. All rights reserved.</p>
-            <p>If you have any questions, please contact us at [contact@example.com]</p>
+          <p>© 2024 THEATER-THRILLS. All rights reserved.</p>
+            <p>Contact us: info@thetheatrethrills.com | +91 9398617123</p>
         </div>
     </body>
     </html>
