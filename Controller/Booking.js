@@ -784,7 +784,11 @@ const sendBookingEmail = async (req, res, next) => {
         </div>
         <div class="footer">
           <p>© 2024 THEATER-THRILLS. All rights reserved.</p>
-            <p>Contact us: info@thetheatrethrills.com | +91 9398617123</p>
+            <p>Contact us: info@thetheatrethrills.com | +91 9398617123 | +91 8885888949</p>
+             <p>
+            &copy;Copyrights 2024 .The Theatre Thrills .
+            All rights reserved.
+          </p>
         </div>
     </body>
     </html>
@@ -834,3 +838,111 @@ module.exports = {
   getAllBookingByTheaterId,
   sendBookingEmail
 };
+
+
+
+
+
+
+
+
+
+
+
+
+// <!DOCTYPE html>
+// <html lang="en">
+// <head>
+//     <meta charset="UTF-8">
+//     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+//     <title>Booking Confirmation</title>
+// </head>
+// <body style="margin: 0; padding: 0; background-color: rgb(249, 250, 251); font-family: Arial, sans-serif;">
+//     <div style="padding: 16px; display: flex; justify-content: center;">
+//         <div style="background: white; border-radius: 8px; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); width: 100%; max-width: 600px;">
+//             <!-- Header -->
+//             <div style="padding: 24px 24px 0 24px;">
+//                 <h1 style="margin: 0; font-size: 24px; font-weight: 600; color: #111827;">Booking Confirmed</h1>
+//                 <div style="margin-top: 16px;">
+//                     <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;">Dear customer,</p>
+//                     <p style="margin: 0 0 8px 0; font-size: 14px; color: #374151;">
+//                         Your movie booking is confirmed. Share Booking ID CNCL-00A41A-00EA86 and collect your tickets at the box office.
+//                     </p>
+//                     <p style="margin: 0; font-size: 14px; color: #6B7280;">
+//                         Cashback, if applicable, will be added to your Amazon Pay balance in 3 business days. Please visit
+//                         <a href="#" style="color: #2563EB; text-decoration: none;">Order Details</a>
+//                         for more information.
+//                     </p>
+//                 </div>
+//             </div>
+
+//             <!-- Content -->
+//             <div style="padding: 24px;">
+//                 <!-- Movie Details -->
+//                 <div style="border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; margin-bottom: 24px; display: flex;">
+//                     <img src="https://via.placeholder.com/80x120" alt="Animal Movie Poster" style="width: 80px; height: 120px; border-radius: 4px;">
+//                     <div style="margin-left: 16px;">
+//                         <h3 style="margin: 0 0 4px 0; font-size: 18px; color: #111827;">Animal</h3>
+//                         <p style="margin: 0 0 4px 0; font-size: 14px; color: #6B7280;">Hindi, 2D</p>
+//                         <p style="margin: 0 0 4px 0; font-size: 14px; color: #374151;">Sat, Dec 02, 09:45PM</p>
+//                         <p style="margin: 0; font-size: 14px; color: #6B7280;">Cinebiss Neelkamal Cinema, Lonavala</p>
+//                     </div>
+//                 </div>
+
+//                 <!-- Ticket Details -->
+//                 <div style="margin-bottom: 24px;">
+//                     <div style="display: flex;">
+//                         <div style="text-align: center; padding: 0 16px;">
+//                             <div style="font-size: 24px; font-weight: 600; color: #111827;">5</div>
+//                             <div style="font-size: 12px; color: #6B7280;">Ticket(s)</div>
+//                         </div>
+//                         <div style="margin-left: 16px;">
+//                             <p style="margin: 0 0 4px 0; font-size: 14px; color: #6B7280;">Cinebiss Neelkamal - Lon</p>
+//                             <p style="margin: 0 0 4px 0; font-size: 14px; color: #374151;">Balcony:G-14,G-15,G-16,G-17,G-18</p>
+//                             <p style="margin: 0; font-size: 12px; color: #6B7280;">Booking ID : CNCL-00A41A-00EA86</p>
+//                         </div>
+//                     </div>
+
+//                     <div style="background-color: #F3F4F6; border-radius: 6px; padding: 12px; margin-top: 16px;">
+//                         <div style="display: flex; gap: 8px; font-size: 14px; color: #374151;">
+//                             ℹ️ You can cancel the tickets 4 hour(s) before the show. Refunds will be done according to Cancellation Policy
+//                         </div>
+//                     </div>
+//                 </div>
+
+//                 <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 24px 0;">
+
+//                 <!-- Booking Summary -->
+//                 <div>
+//                     <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; color: #111827;">Booking Summary</h3>
+//                     <div>
+//                         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+//                             <span style="font-size: 14px; color: #374151;">Ticket(s)</span>
+//                             <span style="font-size: 14px; color: #374151;">₹800.00</span>
+//                         </div>
+//                         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+//                             <span style="font-size: 14px; color: #374151;">Convenience Fee</span>
+//                             <span style="font-size: 14px; color: #374151;">₹84.40</span>
+//                         </div>
+//                         <hr style="border: none; border-top: 1px solid #E5E7EB; margin: 8px 0;">
+//                         <div style="display: flex; justify-content: space-between; font-weight: 600;">
+//                             <span style="font-size: 14px; color: #111827;">Order Total</span>
+//                             <span style="font-size: 14px; color: #111827;">₹884.4</span>
+//                         </div>
+//                     </div>
+//                     <p style="margin: 8px 0 0 0; font-size: 12px; color: #6B7280;">
+//                         Amazon Order ID: 171-3496443-8233144
+//                     </p>
+//                 </div>
+
+//                 <!-- Manage Booking Button -->
+//                 <div style="margin-top: 24px;">
+//                     <a href="#" style="display: inline-block; width: 100%; padding: 12px 0; background-color: white; border: 1px solid #E5E7EB; border-radius: 6px; color: #374151; text-align: center; text-decoration: none; font-size: 14px; font-weight: 500;">
+//                         Manage booking
+//                     </a>
+//                 </div>
+//             </div>
+//         </div>
+//     </div>
+// </body>
+// </html>

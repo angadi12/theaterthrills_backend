@@ -171,7 +171,11 @@ const sendOtp = async (email) => {
         </div>
         <div class="footer">
             <p>© 2024 THEATER-THRILLS. All rights reserved.</p>
-            <p>Contact us: info@thetheatrethrills.com | +91 9398617123</p>
+            <p>Contact us: info@thetheatrethrills.com | +91 9398617123 | +91 8885888949</p>
+             <p>
+            &copy;Copyrights 2024 .The Theatre Thrills .
+            All rights reserved.
+          </p>
         </div>
     </div>
 </body>
