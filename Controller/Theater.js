@@ -761,6 +761,7 @@ const getAllTheaters = async (req, res, next) => {
         minimumDecorationAmount: theater.minimumDecorationAmount,
         images: theater.images,
         availableSlots,
+        slots:theater.slots
       });
     }
 
@@ -873,6 +874,7 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
         minimumDecorationAmount: theater.minimumDecorationAmount,
         images: theater.images,
         availableSlots,
+        slots:theater.slots
       });
     }
 
@@ -971,6 +973,317 @@ const getTheaterAnalytics = async (req, res) => {
   }
 };
 
+// const getAllTheaterAnalytics = async (req, res) => {
+//   try {
+//     const { year } = req.query;
+
+//     // Validate input
+//     if (!year) {
+//       return res.status(400).json({ message: "Year is required." });
+//     }
+
+//     // Define the date range for the year
+//     const startOfYear = new Date(`${year}-01-01T00:00:00.000Z`);
+//     const endOfYear = new Date(`${year}-12-31T23:59:59.999Z`);
+
+//     // Fetch all theaters
+//     const theaters = await Theater.find({});
+//     if (!theaters || theaters.length === 0) {
+//       return res.status(404).json({ message: "No theaters found." });
+//     }
+
+//     // Aggregate bookings for all theaters
+//     const bookings = await Booking.aggregate([
+//       {
+//         $match: {
+//           date: { $gte: startOfYear, $lte: endOfYear },
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: { $month: "$date" },
+//           totalBookings: { $sum: 1 },
+//           totalRevenue: { $sum: "$TotalAmount" },
+//         },
+//       },
+//       {
+//         $project: {
+//           month: "$_id",
+//           totalBookings: 1,
+//           totalRevenue: 1,
+//           _id: 0,
+//         },
+//       },
+//       { $sort: { month: 1 } },
+//     ]);
+
+//     // Generate a full monthly report, filling in months without data
+//     const months = [
+//       "January",
+//       "February",
+//       "March",
+//       "April",
+//       "May",
+//       "June",
+//       "July",
+//       "August",
+//       "September",
+//       "October",
+//       "November",
+//       "December",
+//     ];
+
+//     const formattedData = Array.from({ length: 12 }, (_, index) => {
+//       const monthData = bookings.find((b) => b.month === index + 1);
+//       return {
+//         month: months[index],
+//         totalBookings: monthData?.totalBookings || 0,
+//         totalRevenue: monthData?.totalRevenue || 0,
+//       };
+//     });
+
+//     res.json({
+//       year,
+//       analytics: formattedData,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching all theater analytics:", error);
+//     res.status(500).json({ message: "Internal server error." });
+//   }
+// };
+
+const getAllTheaterAnalytics = async (req, res) => {
+  try {
+    const { year } = req.query;
+      const {branchId}=req.params
+    // Validate inputs
+    if (!year) {
+      return res.status(400).json({ message: "Year is required." });
+    }
+
+    if (!branchId) {
+      return res.status(400).json({ message: "Branch ID is required." });
+    }
+
+    // Define the date range for the year
+    const startOfYear = new Date(`${year}-01-01T00:00:00.000Z`);
+    const endOfYear = new Date(`${year}-12-31T23:59:59.999Z`);
+
+    // Fetch all theaters for the branch
+    const theaters = await Theater.find({ branch: branchId });
+    if (!theaters || theaters.length === 0) {
+      return res.status(404).json({ message: "No theaters found for the specified branch." });
+    }
+
+    // Extract theater IDs to filter bookings
+    const theaterIds = theaters.map((theater) => theater._id);
+
+    // Aggregate bookings for the filtered theaters
+    const bookings = await Booking.aggregate([
+      {
+        $match: {
+          theater: { $in: theaterIds },
+          date: { $gte: startOfYear, $lte: endOfYear },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$date" },
+          totalBookings: { $sum: 1 },
+          totalRevenue: { $sum: "$TotalAmount" },
+        },
+      },
+      {
+        $project: {
+          month: "$_id",
+          totalBookings: 1,
+          totalRevenue: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { month: 1 } },
+    ]);
+
+    // Generate a full monthly report, filling in months without data
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const formattedData = Array.from({ length: 12 }, (_, index) => {
+      const monthData = bookings.find((b) => b.month === index + 1);
+      return {
+        month: months[index],
+        totalBookings: monthData?.totalBookings || 0,
+        totalRevenue: monthData?.totalRevenue || 0,
+      };
+    });
+
+    res.json({
+      year,
+      branchId,
+      analytics: formattedData,
+    });
+  } catch (error) {
+    console.error("Error fetching theater analytics:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+
+const getHourlyTheaterAnalytics = async (req, res) => {
+  try {
+    const { date } = req.query; // Accept a specific date (e.g., "2024-12-01")
+    const { theaterId } = req.params;
+
+    // Validate inputs
+    if (!theaterId || !date) {
+      return res
+        .status(400)
+        .json({ message: "Theater ID and date are required." });
+    }
+
+    // Find the theater
+    const theater = await Theater.findById(theaterId);
+    if (!theater) {
+      return res.status(404).json({ message: "Theater not found." });
+    }
+
+    // Define the date range for the selected date
+    const startOfDay = new Date(`${date}T00:00:00.000Z`);
+    const endOfDay = new Date(`${date}T23:59:59.999Z`);
+
+    // Fetch bookings within the date range for the given theater
+    const bookings = await Booking.aggregate([
+      {
+        $match: {
+          theater: theater._id,
+          date: { $gte: startOfDay, $lte: endOfDay },
+        },
+      },
+      {
+        $group: {
+          _id: { $hour: "$date" },
+          totalBookings: { $sum: 1 },
+          totalRevenue: { $sum: "$TotalAmount" },
+        },
+      },
+      {
+        $project: {
+          hour: "$_id",
+          totalBookings: 1,
+          totalRevenue: 1,
+          _id: 0,
+        },
+      },
+      { $sort: { hour: 1 } },
+    ]);
+
+    // Generate a full hourly report, filling in hours without data
+    const hours = Array.from({ length: 24 }, (_, index) => index); // [0, 1, ..., 23]
+    const formattedData = hours.map((hour) => {
+      const hourData = bookings.find((b) => b.hour === hour);
+      return {
+        hour: `${hour}:00 - ${hour + 1}:00`,
+        totalBookings: hourData?.totalBookings || 0,
+        totalRevenue: hourData?.totalRevenue || 0,
+      };
+    });
+
+    res.json({
+      theater: theater.name,
+      date,
+      analytics: formattedData,
+    });
+  } catch (error) {
+    console.error("Error fetching hourly theater analytics:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+const getHourlyAllTheatersAnalytics = async (req, res) => {
+  try {
+    const { date } = req.query; // Accept a specific date (e.g., "2024-12-01")
+
+    // Validate input
+    if (!date) {
+      return res.status(400).json({ message: "Date is required." });
+    }
+
+    // Define the date range for the selected date
+    const startOfDay = new Date(`${date}T00:00:00.000Z`);
+    const endOfDay = new Date(`${date}T23:59:59.999Z`);
+
+    // Fetch all theaters
+    const theaters = await Theater.find({});
+    if (!theaters || theaters.length === 0) {
+      return res.status(404).json({ message: "No theaters found." });
+    }
+
+    // Array to hold aggregated hourly data
+    const hours = Array.from({ length: 24 }, (_, index) => index); // [0, 1, ..., 23]
+    const aggregatedData = hours.map((hour) => ({
+      hour: `${hour}:00 - ${hour + 1}:00`,
+      totalBookings: 0,
+      totalRevenue: 0,
+    }));
+
+    // Iterate through theaters to aggregate analytics
+    for (const theater of theaters) {
+      const bookings = await Booking.aggregate([
+        {
+          $match: {
+            theater: theater._id,
+            date: { $gte: startOfDay, $lte: endOfDay },
+          },
+        },
+        {
+          $group: {
+            _id: { $hour: "$date" },
+            totalBookings: { $sum: 1 },
+            totalRevenue: { $sum: "$TotalAmount" },
+          },
+        },
+        {
+          $project: {
+            hour: "$_id",
+            totalBookings: 1,
+            totalRevenue: 1,
+            _id: 0,
+          },
+        },
+      ]);
+
+      // Merge data into aggregatedData
+      bookings.forEach((booking) => {
+        const hourIndex = booking.hour; // Match by hour index
+        if (aggregatedData[hourIndex]) {
+          aggregatedData[hourIndex].totalBookings += booking.totalBookings;
+          aggregatedData[hourIndex].totalRevenue += booking.totalRevenue;
+        }
+      });
+    }
+
+    res.json({ date, analytics: aggregatedData });
+  } catch (error) {
+    console.error("Error fetching aggregated theater analytics:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+
+
+
 module.exports = {
   createTheater,
   getTheaterById,
@@ -982,4 +1295,7 @@ module.exports = {
   getAllTheaterLocations,
   getAllTheatersByBranchId,
   getTheaterAnalytics,
+  getAllTheaterAnalytics,
+  getHourlyTheaterAnalytics,
+  getHourlyAllTheatersAnalytics
 };

@@ -178,7 +178,7 @@ const createBooking = async (req, res, next) => {
       couponCode,
       deviceId,
       discountAmount,
-      paymentType
+      paymentType,
     } = req.body;
 
     if (
@@ -211,25 +211,21 @@ const createBooking = async (req, res, next) => {
       );
     }
 
-
-
     if (couponCode) {
       const coupon = await CouponOffer.findOne({ code: couponCode });
 
-     
-      if (coupon.type === "coupon" || coupon.type==="offer") {     
+      if (coupon.type === "coupon" || coupon.type === "offer") {
         coupon.devicesUsed.push(deviceId);
         coupon.users.push(user);
         coupon.usageLimit -= 1;
 
         if (coupon.usageLimit <= 0) {
-          coupon.isActive = false; 
+          coupon.isActive = false;
         }
 
         await coupon.save();
       }
     }
-
 
     // Create booking with pending payment status
     const booking = new Booking({
@@ -254,10 +250,10 @@ const createBooking = async (req, res, next) => {
       TotalAmount,
       orderId,
       paymentStatus: "completed",
-      bookingId: `BK-${Date.now()}`, 
-      coupon: couponCode ,
-      discountAmount: discountAmount || 0, 
-      paymentType
+      bookingId: `BK-${Date.now()}`,
+      coupon: couponCode,
+      discountAmount: discountAmount || 0,
+      paymentType,
     });
 
     await booking.save();
@@ -417,7 +413,10 @@ const getBookingById = async (req, res, next) => {
     }
 
     // Fetch the booking by ID
-    const booking = await Booking.findById(id).populate("user", "phoneNumber email");
+    const booking = await Booking.findById(id).populate(
+      "user",
+      "phoneNumber email"
+    );
 
     if (!booking) {
       return next(new AppErr("Booking not found", 404));
@@ -469,8 +468,6 @@ const getBookingById = async (req, res, next) => {
     next(new AppErr("Error fetching booking", 500));
   }
 };
-
-
 
 const getBookingByUserId = async (req, res, next) => {
   const { userId } = req.params;
@@ -533,7 +530,6 @@ const getBookingByUserId = async (req, res, next) => {
   }
 };
 
-
 // const getAllBookingByTheaterId = async (req, res) => {
 //   const { theaterId } = req.params;
 
@@ -544,7 +540,7 @@ const getBookingByUserId = async (req, res, next) => {
 
 //     const bookings = await Booking.find({ theater: theaterId })
 //       .populate("user")
-//       .populate("theater") 
+//       .populate("theater")
 //       .sort({ date: -1 })
 //       .lean();
 
@@ -580,13 +576,9 @@ const getBookingByUserId = async (req, res, next) => {
 //   }
 // };
 
-
-
-
-
 const getAllBookingByTheaterId = async (req, res) => {
   const { theaterId } = req.params;
-  const { status } = req.query; // Expecting a query parameter for status
+  const { status } = req.query;
   try {
     if (!theaterId) {
       return res.status(400).json({ message: "Theater ID is required" });
@@ -600,7 +592,9 @@ const getAllBookingByTheaterId = async (req, res) => {
       .lean();
 
     if (!bookings || bookings.length === 0) {
-      return res.status(404).json({ success: false, message: "No bookings found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "No bookings found" });
     }
 
     // Fetch theater slots for slot details
@@ -652,11 +646,11 @@ const getAllBookingByTheaterId = async (req, res) => {
     const filteredBookings = enrichedBookings.filter((booking) => {
       const bookingDateIST = convertToISTDateString(booking.date);
       if (status === "Active") {
-        return bookingDateIST === todayIST ;
+        return bookingDateIST === todayIST;
       } else if (status === "upcoming") {
-        return bookingDateIST > todayIST ;
+        return bookingDateIST > todayIST;
       } else if (status === "completed") {
-        return bookingDateIST < todayIST ;
+        return bookingDateIST < todayIST;
       } else if (status === "AllBooking") {
         return true; // Return all bookings
       } else {
@@ -678,20 +672,129 @@ const getAllBookingByTheaterId = async (req, res) => {
   }
 };
 
+const getAllBookingByBranchId = async (req, res) => {
+  const { branchId } = req.params;
+  const { status } = req.query;
 
+  try {
+    if (!branchId) {
+      return res.status(400).json({ message: "Branch ID is required" });
+    }
 
+    // Fetch all theaters for the branch
+    const theaters = await Theater.find({ branch: branchId })
+    if (!theaters || theaters.length === 0) {
+      return res
+        .status(404)
+        .json({ message: "No theaters found for the branch" });
+    }
 
+    const theaterIds = theaters.map((theater) => theater._id);
+
+    // Fetch all bookings for the theaters
+    const bookings = await Booking.find({ theater: { $in: theaterIds } })
+      .populate("user")
+      .populate("theater")
+      .sort({ date: -1 })
+      .lean();
+
+    if (!bookings || bookings.length === 0) {
+      return res
+        .status(404)
+        .json({ success: false, message: "No bookings found" });
+    }
+
+    // Add slot details to each booking
+    const enrichedBookings = await Promise.all(
+      bookings.map(async (booking) => {
+        const theater = theaters.find(
+          (t) => t._id.toString() === booking.theater._id.toString()
+        );
+    
+        if (theater) {
+          const slotDetails = theater.slots?.find(
+            (slot) => slot._id.toString() === booking.slot.toString()
+          );
+          return {
+            ...booking,
+            slotDetails: slotDetails || null, // Add `null` if slot not found
+          };
+        }
+        return booking;
+      })
+    );
+
+    // Convert UTC date to IST in 'yyyy-mm-dd' format
+    const convertToISTDateString = (utcDate) => {
+      return moment(utcDate).tz("Asia/Kolkata").format("YYYY-MM-DD");
+    };
+
+    const todayIST = convertToISTDateString(new Date());
+
+    // Count bookings by status
+    const counts = {
+      active: 0,
+      upcoming: 0,
+      completed: 0,
+      all: enrichedBookings.length,
+    };
+
+    enrichedBookings.forEach((booking) => {
+      const bookingDateIST = convertToISTDateString(booking.date);
+      if (booking.paymentStatus === "completed") {
+        if (bookingDateIST === todayIST) {
+          counts.active += 1;
+        } else if (bookingDateIST > todayIST) {
+          counts.upcoming += 1;
+        } else if (bookingDateIST < todayIST) {
+          counts.completed += 1;
+        }
+      }
+    });
+
+    // Filter bookings based on the status query
+    const filteredBookings = enrichedBookings.filter((booking) => {
+      const bookingDateIST = convertToISTDateString(booking.date);
+      if (status === "Active") {
+        return bookingDateIST === todayIST;
+      } else if (status === "upcoming") {
+        return bookingDateIST > todayIST;
+      } else if (status === "completed") {
+        return bookingDateIST < todayIST;
+      } else if (status === "AllBooking") {
+        return true; // Return all bookings
+      } else {
+        return false; // Invalid or unsupported status
+      }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: filteredBookings,
+      counts, // Include counts for each status
+    });
+  } catch (error) {
+    console.error("Error fetching bookings:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error. Please try again later.",
+    });
+  }
+};
 
 const sendBookingEmail = async (req, res, next) => {
   try {
-    const { bookingId } = req.params;  // Get booking ID from params
+    const { bookingId } = req.params; // Get booking ID from params
 
     if (!mongoose.Types.ObjectId.isValid(bookingId)) {
       return next(new AppErr("Invalid booking ID", 400));
     }
 
     // Fetch the booking by ID
-    const booking = await Booking.findById(bookingId).populate("user", "name email");
+    const booking = await Booking.findById(bookingId).populate(
+      "user",
+      "name email"
+    );
 
     if (!booking) {
       return next(new AppErr("Booking not found", 404));
@@ -707,7 +810,6 @@ const sendBookingEmail = async (req, res, next) => {
     if (!slot) {
       return next(new AppErr("Slot not found", 404));
     }
-
 
     // Prepare email template
     const emailTemplate = `
@@ -824,10 +926,6 @@ const sendBookingEmail = async (req, res, next) => {
   }
 };
 
-
-
-
-
 module.exports = {
   createBooking,
   verifyPayment,
@@ -836,19 +934,9 @@ module.exports = {
   getBookingByUserId,
   createRazorpayOrder,
   getAllBookingByTheaterId,
-  sendBookingEmail
+  sendBookingEmail,
+  getAllBookingByBranchId,
 };
-
-
-
-
-
-
-
-
-
-
-
 
 // <!DOCTYPE html>
 // <html lang="en">

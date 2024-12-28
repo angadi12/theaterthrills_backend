@@ -13,7 +13,10 @@ const {
   getAvailableSlotsByLocation,
   getAllTheaterLocations,
   getAllTheatersByBranchId,
-  getTheaterAnalytics
+  getTheaterAnalytics,
+  getHourlyTheaterAnalytics,
+  getHourlyAllTheatersAnalytics,
+  getAllTheaterAnalytics
 } = require("../Controller/Theater");
 
 
@@ -86,6 +89,12 @@ TheaterRouter.get("/theater/branch/:branchId", getAllTheatersByBranchId);
 
 
 TheaterRouter.get("/theater/getTheaterAnalytics/:theaterId", getTheaterAnalytics);
+
+TheaterRouter.get("/theater/getAllTheaterAnalytics/:branchId", getAllTheaterAnalytics);
+
+TheaterRouter.get("/theater/getHourlyTheaterAnalytics/:theaterId", getHourlyTheaterAnalytics);
+
+TheaterRouter.get("/theater/getHourlyAllTheatersAnalytics", getHourlyAllTheatersAnalytics);
 
 
 
