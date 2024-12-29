@@ -94,7 +94,7 @@ TheaterRouter.get("/theater/getAllTheaterAnalytics/:branchId", getAllTheaterAnal
 
 TheaterRouter.get("/theater/getHourlyTheaterAnalytics/:theaterId", getHourlyTheaterAnalytics);
 
-TheaterRouter.get("/theater/getHourlyAllTheatersAnalytics", getHourlyAllTheatersAnalytics);
+TheaterRouter.get("/theater/getHourlyAllTheatersAnalytics/:branchId", getHourlyAllTheatersAnalytics);
 
 
 

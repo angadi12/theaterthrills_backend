@@ -1214,18 +1214,22 @@ const getHourlyTheaterAnalytics = async (req, res) => {
 const getHourlyAllTheatersAnalytics = async (req, res) => {
   try {
     const { date } = req.query; // Accept a specific date (e.g., "2024-12-01")
-
+    const {branchId}=req.params
     // Validate input
     if (!date) {
       return res.status(400).json({ message: "Date is required." });
     }
+
+    if (!branchId) {
+      return res.status(400).json({ message: "Branch ID is required." });
+    } 
 
     // Define the date range for the selected date
     const startOfDay = new Date(`${date}T00:00:00.000Z`);
     const endOfDay = new Date(`${date}T23:59:59.999Z`);
 
     // Fetch all theaters
-    const theaters = await Theater.find({});
+    const theaters = await Theater.find({ branch: branchId });
     if (!theaters || theaters.length === 0) {
       return res.status(404).json({ message: "No theaters found." });
     }
