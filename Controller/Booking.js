@@ -926,6 +926,57 @@ const sendBookingEmail = async (req, res, next) => {
   }
 };
 
+
+
+const handleRefundRequest = async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const { bookingId } = req.params;
+   console.log(reason,bookingId)
+    // Fetch the booking details
+    const booking = await Booking.findOne({ bookingId });
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    // Get the current time in Indian timezone
+    const currentTime = moment().tz("Asia/Kolkata").toDate();
+    const bookingTime = moment(booking.date).tz("Asia/Kolkata").toDate();
+
+    // Calculate the time difference in hours
+    const timeDifference = (bookingTime - currentTime) / (1000 * 60 * 60);
+
+    // Determine the refund amount based on the time difference
+    let refundAmount = 0;
+    if (timeDifference >= 72) {
+      refundAmount = 500;
+    } else {
+      return res
+        .status(400)
+        .json({ message: "Cancellation not eligible for this booking" });
+    }
+
+    // Save cancellation details
+    booking.cancellationRequestDate = currentTime;
+    booking.cancellationReason = reason || "No reason provided";
+    booking.refundStatus = "requested";
+    booking.refundAmount = refundAmount;
+    await booking.save();
+
+    res.status(200).json({
+      status:true,
+      message: "Booking cancellation successfully processed",
+    });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Failed to process cancellation", error: error.message });
+  }
+};
+
+
+
 module.exports = {
   createBooking,
   verifyPayment,
@@ -936,6 +987,7 @@ module.exports = {
   getAllBookingByTheaterId,
   sendBookingEmail,
   getAllBookingByBranchId,
+  handleRefundRequest
 };
 
 // <!DOCTYPE html>

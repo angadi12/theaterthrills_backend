@@ -33,20 +33,6 @@ ContactRouter.post(
       .notEmpty()
       .withMessage("Mobile Number is required")
       .withMessage("Mobile Number must be valid"),
-
-    body("email")
-      .notEmpty()
-      .withMessage("Email is required")
-      .isEmail()
-      .withMessage("Email must be a valid email address"),
-
-    body("occasion")
-      .notEmpty()
-      .withMessage("occasion is required"),
-    body("details")
-      .optional()
-      .isString()
-      .withMessage("Details must be a string"),
   ],
   createContact
 );

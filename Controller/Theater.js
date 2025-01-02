@@ -868,7 +868,7 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
         theaterId: theater._id,
         name: theater.name,
         location: theater.location,
-        capacity: theater.capacity,
+        groupSize: theater.maxCapacity,
         amenities: theater.amenities,
         price: theater.price,
         minimumDecorationAmount: theater.minimumDecorationAmount,
@@ -1168,12 +1168,12 @@ const getHourlyTheaterAnalytics = async (req, res) => {
       {
         $match: {
           theater: theater._id,
-          date: { $gte: startOfDay, $lte: endOfDay },
+          createdAt: { $gte: startOfDay, $lte: endOfDay },
         },
       },
       {
         $group: {
-          _id: { $hour: "$date" },
+          _id: { $hour: "$createdAt" },
           totalBookings: { $sum: 1 },
           totalRevenue: { $sum: "$TotalAmount" },
         },
@@ -1248,12 +1248,12 @@ const getHourlyAllTheatersAnalytics = async (req, res) => {
         {
           $match: {
             theater: theater._id,
-            date: { $gte: startOfDay, $lte: endOfDay },
+            createdAt: { $gte: startOfDay, $lte: endOfDay },
           },
         },
         {
           $group: {
-            _id: { $hour: "$date" },
+            _id: { $hour: "$createdAt" },
             totalBookings: { $sum: 1 },
             totalRevenue: { $sum: "$TotalAmount" },
           },

@@ -18,11 +18,9 @@ const ContactSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      required: true,
     },
     occasion: {
       type: String,
-      required: true,
     },
     addOns: {
       type: [String],

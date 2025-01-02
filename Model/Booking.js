@@ -117,6 +117,27 @@ const bookingSchema = new Schema({
     required: true,
     default: "advance",
   },
+  refundStatus: {
+    type: String,
+    enum: ["not_requested", "requested", "processed", "failed"],
+    default: "not_requested",
+  },
+  refundAmount: {
+    type: Number,
+    default: 0,
+    min: [0, "Refund amount cannot be negative"],
+  },
+  refundDate: {
+    type: Date,
+  },
+  cancellationRequestDate: {
+    type: Date,
+  },
+  cancellationReason: {
+    type: String,
+    default: "",
+    maxlength: [500, "Cancellation reason cannot exceed 500 characters"],
+  },
 
   createdAt: {
     type: Date,
