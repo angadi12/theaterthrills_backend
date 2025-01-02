@@ -141,7 +141,7 @@ const sendOtp = async (email) => {
             text-align: center;
             padding: 20px;
             font-size: 14px;
-            color: #F30278;
+            color: #ffffff;
         }
         .social-links {
             margin-top: 20px;
@@ -170,8 +170,8 @@ const sendOtp = async (email) => {
             <p>If you didn't request this code, please ignore this email or contact our support team.</p>
         </div>
         <div class="footer">
-            <p>© 2024 THEATER-THRILLS. All rights reserved.</p>
-            <p>Contact us: info@thetheatrethrills.com | +91 9398617123 | +91 8885888949</p>
+            <p>© 2025 THE THEATERTHRILLS. All rights reserved.</p>
+            <p>Contact us: info@thetheatrethrills.com | +91 888 5888 949</p>
              <p>
             &copy;Copyrights 2024 .The Theatre Thrills .
             All rights reserved.
