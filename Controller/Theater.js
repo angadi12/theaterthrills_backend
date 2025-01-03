@@ -869,6 +869,7 @@ const getAvailableSlotsByLocation = async (req, res, next) => {
         name: theater.name,
         location: theater.location,
         groupSize: theater.maxCapacity,
+        capacity:theater.groupSize,
         amenities: theater.amenities,
         price: theater.price,
         minimumDecorationAmount: theater.minimumDecorationAmount,

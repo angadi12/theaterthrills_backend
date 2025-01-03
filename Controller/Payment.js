@@ -4,7 +4,6 @@ const Booking = require("../Model/Booking");
 const fetchAllPayments = async (req, res) => {
     try {
       const { from, to, count = 50, skip = 0 } = req.query;
-      console.log("Query Params:", req.query);
   
       const options = {
         from:Number(from) ,
@@ -13,10 +12,8 @@ const fetchAllPayments = async (req, res) => {
         skip: parseInt(skip),
       };
   
-      console.log("Options for Razorpay API:", options);
   
       const razorpayPayments = await razorpayInstance.payments.all(options);
-      console.log("Razorpay Response:", razorpayPayments);
   
       const orderIds = razorpayPayments.items.map(payment => payment.order_id);
       const bookings = await Booking.find({ orderId: { $in: orderIds } });
@@ -49,7 +46,6 @@ const fetchAllPayments = async (req, res) => {
   const fetchsinglePayments = async (req, res) => {
     try {
       const { id } = req.params; 
-      console.log(id)
       if (!id) {
         return res.status(400).json({
           success: false,

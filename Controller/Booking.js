@@ -530,14 +530,17 @@ const getBookingByUserId = async (req, res, next) => {
   }
 };
 
+
+
 // const getAllBookingByTheaterId = async (req, res) => {
 //   const { theaterId } = req.params;
-
+//   const { status } = req.query;
 //   try {
 //     if (!theaterId) {
 //       return res.status(400).json({ message: "Theater ID is required" });
 //     }
 
+//     // Fetch all bookings for the theater
 //     const bookings = await Booking.find({ theater: theaterId })
 //       .populate("user")
 //       .populate("theater")
@@ -545,27 +548,76 @@ const getBookingByUserId = async (req, res, next) => {
 //       .lean();
 
 //     if (!bookings || bookings.length === 0) {
-//       return res.status(404).json({ success: false, message: "Nobookings" });
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "No bookings found" });
 //     }
 
+//     // Fetch theater slots for slot details
 //     const theater = await Theater.findById(theaterId).select("slots").lean();
 //     if (!theater) {
 //       return res.status(404).json({ message: "Theater not found" });
 //     }
-//     const enrichedBookings = bookings.map(booking => {
-//       const slotDetails = theater.slots.find(slot => slot._id.toString() === booking.slot.toString());
-//       if (!slotDetails) {
-//         console.warn(`Slot not found for booking ID: ${booking._id}`);
-//       }
+
+//     // Add slot details to each booking
+//     const enrichedBookings = bookings.map((booking) => {
+//       const slotDetails = theater.slots.find(
+//         (slot) => slot._id.toString() === booking.slot.toString()
+//       );
 //       return {
 //         ...booking,
 //         slotDetails: slotDetails || null, // Add `null` if slot not found
 //       };
 //     });
 
+//     // Convert UTC date to IST in 'yyyy-mm-dd' format
+//     const convertToISTDateString = (utcDate) => {
+//       return moment(utcDate).tz("Asia/Kolkata").format("YYYY-MM-DD");
+//     };
+
+//     const todayIST = convertToISTDateString(new Date());
+
+//     // Count bookings by status
+//     const counts = {
+//       active: 0,
+//       upcoming: 0,
+//       completed: 0,
+//       all: enrichedBookings.length,
+//     };
+
+//     enrichedBookings.forEach((booking) => {
+//       const bookingDateIST = convertToISTDateString(booking.date);
+//       if (booking.paymentStatus === "completed") {
+//         if (bookingDateIST === todayIST) {
+//           counts.active += 1;
+//         } else if (bookingDateIST > todayIST) {
+//           counts.upcoming += 1;
+//         } else if (bookingDateIST < todayIST) {
+//           counts.completed += 1;
+//         }
+//       }
+//     });
+
+//     // Filter bookings based on the status query
+//     const filteredBookings = enrichedBookings.filter((booking) => {
+//       const bookingDateIST = convertToISTDateString(booking.date);
+//       if (status === "Active") {
+//         return bookingDateIST === todayIST;
+//       } else if (status === "upcoming") {
+//         return bookingDateIST > todayIST;
+//       } else if (status === "completed") {
+//         return bookingDateIST < todayIST;
+//       } else if (status === "AllBooking") {
+//         return true; // Return all bookings
+//       } else {
+//         return false; // Invalid or unsupported status
+//       }
+//     });
+
 //     res.status(200).json({
 //       success: true,
-//       data: enrichedBookings,
+//       data: filteredBookings,
+//       counts, // Include counts for each status
 //     });
 //   } catch (error) {
 //     console.error("Error fetching bookings:", error);
@@ -576,16 +628,37 @@ const getBookingByUserId = async (req, res, next) => {
 //   }
 // };
 
+
 const getAllBookingByTheaterId = async (req, res) => {
   const { theaterId } = req.params;
-  const { status } = req.query;
+  const { status, startDate, endDate } = req.query;
+
   try {
     if (!theaterId) {
       return res.status(400).json({ message: "Theater ID is required" });
     }
 
-    // Fetch all bookings for the theater
-    const bookings = await Booking.find({ theater: theaterId })
+    // Build date range filter
+    let dateFilter = {};
+    if (startDate || endDate) {
+      const start = startDate
+        ? moment.tz(startDate, "Asia/Kolkata").startOf("day").toDate()
+        : null;
+      const end = endDate
+        ? moment.tz(endDate, "Asia/Kolkata").endOf("day").toDate()
+        : null;
+
+      if (start && end) {
+        dateFilter.date = { $gte: start, $lte: end };
+      } else if (start) {
+        dateFilter.date = { $gte: start };
+      } else if (end) {
+        dateFilter.date = { $lte: end };
+      }
+    }
+
+    // Fetch all bookings for the theater within the date range
+    const bookings = await Booking.find({ theater: theaterId, ...dateFilter })
       .populate("user")
       .populate("theater")
       .sort({ date: -1 })
@@ -672,17 +745,132 @@ const getAllBookingByTheaterId = async (req, res) => {
   }
 };
 
+
+
+
+// const getAllBookingByBranchId = async (req, res) => {
+//   const { branchId } = req.params;
+//   const { status } = req.query;
+
+//   try {
+//     if (!branchId) {
+//       return res.status(400).json({ message: "Branch ID is required" });
+//     }
+
+//     // Fetch all theaters for the branch
+//     const theaters = await Theater.find({ branch: branchId })
+//     if (!theaters || theaters.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "No theaters found for the branch" });
+//     }
+
+//     const theaterIds = theaters.map((theater) => theater._id);
+
+//     // Fetch all bookings for the theaters
+//     const bookings = await Booking.find({ theater: { $in: theaterIds } })
+//       .populate("user")
+//       .populate("theater")
+//       .sort({ date: -1 })
+//       .lean();
+
+//     if (!bookings || bookings.length === 0) {
+//       return res
+//         .status(404)
+//         .json({ success: false, message: "No bookings found" });
+//     }
+
+//     // Add slot details to each booking
+//     const enrichedBookings = await Promise.all(
+//       bookings.map(async (booking) => {
+//         const theater = theaters.find(
+//           (t) => t._id.toString() === booking.theater._id.toString()
+//         );
+    
+//         if (theater) {
+//           const slotDetails = theater.slots?.find(
+//             (slot) => slot._id.toString() === booking.slot.toString()
+//           );
+//           return {
+//             ...booking,
+//             slotDetails: slotDetails || null, // Add `null` if slot not found
+//           };
+//         }
+//         return booking;
+//       })
+//     );
+
+//     // Convert UTC date to IST in 'yyyy-mm-dd' format
+//     const convertToISTDateString = (utcDate) => {
+//       return moment(utcDate).tz("Asia/Kolkata").format("YYYY-MM-DD");
+//     };
+
+//     const todayIST = convertToISTDateString(new Date());
+
+//     // Count bookings by status
+//     const counts = {
+//       active: 0,
+//       upcoming: 0,
+//       completed: 0,
+//       all: enrichedBookings.length,
+//     };
+
+//     enrichedBookings.forEach((booking) => {
+//       const bookingDateIST = convertToISTDateString(booking.date);
+//       if (booking.paymentStatus === "completed") {
+//         if (bookingDateIST === todayIST) {
+//           counts.active += 1;
+//         } else if (bookingDateIST > todayIST) {
+//           counts.upcoming += 1;
+//         } else if (bookingDateIST < todayIST) {
+//           counts.completed += 1;
+//         }
+//       }
+//     });
+
+//     // Filter bookings based on the status query
+//     const filteredBookings = enrichedBookings.filter((booking) => {
+//       const bookingDateIST = convertToISTDateString(booking.date);
+//       if (status === "Active") {
+//         return bookingDateIST === todayIST;
+//       } else if (status === "upcoming") {
+//         return bookingDateIST > todayIST;
+//       } else if (status === "completed") {
+//         return bookingDateIST < todayIST;
+//       } else if (status === "AllBooking") {
+//         return true; // Return all bookings
+//       } else {
+//         return false; // Invalid or unsupported status
+//       }
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       data: filteredBookings,
+//       counts, // Include counts for each status
+//     });
+//   } catch (error) {
+//     console.error("Error fetching bookings:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Server error. Please try again later.",
+//     });
+//   }
+// };
+
+
+
 const getAllBookingByBranchId = async (req, res) => {
   const { branchId } = req.params;
-  const { status } = req.query;
-
+  const { status, startDate, endDate } = req.query;
+console.log
   try {
     if (!branchId) {
       return res.status(400).json({ message: "Branch ID is required" });
     }
 
     // Fetch all theaters for the branch
-    const theaters = await Theater.find({ branch: branchId })
+    const theaters = await Theater.find({ branch: branchId });
     if (!theaters || theaters.length === 0) {
       return res
         .status(404)
@@ -691,8 +879,30 @@ const getAllBookingByBranchId = async (req, res) => {
 
     const theaterIds = theaters.map((theater) => theater._id);
 
-    // Fetch all bookings for the theaters
-    const bookings = await Booking.find({ theater: { $in: theaterIds } })
+    // Build date range filter
+    let dateFilter = {};
+    if (startDate || endDate) {
+      const start = startDate
+        ? moment.tz(startDate, "Asia/Kolkata").startOf("day").toDate()
+        : null;
+      const end = endDate
+        ? moment.tz(endDate, "Asia/Kolkata").endOf("day").toDate()
+        : null;
+
+      if (start && end) {
+        dateFilter.date = { $gte: start, $lte: end };
+      } else if (start) {
+        dateFilter.date = { $gte: start };
+      } else if (end) {
+        dateFilter.date = { $lte: end };
+      }
+    }
+
+    // Fetch all bookings for the theaters within the date range
+    const bookings = await Booking.find({
+      theater: { $in: theaterIds },
+      ...dateFilter,
+    })
       .populate("user")
       .populate("theater")
       .sort({ date: -1 })
@@ -710,7 +920,7 @@ const getAllBookingByBranchId = async (req, res) => {
         const theater = theaters.find(
           (t) => t._id.toString() === booking.theater._id.toString()
         );
-    
+
         if (theater) {
           const slotDetails = theater.slots?.find(
             (slot) => slot._id.toString() === booking.slot.toString()
@@ -781,6 +991,7 @@ const getAllBookingByBranchId = async (req, res) => {
     });
   }
 };
+
 
 const sendBookingEmail = async (req, res, next) => {
   try {

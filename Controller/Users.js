@@ -333,7 +333,7 @@ const verifyToken = async (req, res, next) => {
     }
 
     // If not Firebase, try JWT token
-    if (!user) {
+    if (!user && !decoded) {
       try {
         decoded = jwt.verify(token, process.env.JWT_SECRET);
         user = await User.findOne({ email: decoded.email });
